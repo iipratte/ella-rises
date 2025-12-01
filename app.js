@@ -42,6 +42,48 @@ app.get("/login", (req, res) => {
     res.render("login");
 });
 
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+  
+    try {
+      if (!username || !password) {
+        return res.render('login', {
+          error: 'Username and password are required.',
+          username
+        });
+      }
+  
+      const user = await knex('users')
+        .where({ username })
+        .first(); // SELECT * FROM users WHERE username = ? LIMIT 1[web:112][web:128]
+  
+      if (!user || user.password !== password) {
+        return res.render('login', {
+          error: 'Invalid username or password.',
+          username
+        });
+      }
+  
+      // Store minimal info in session
+      req.session.userId = user.id;
+      req.session.username = user.username;
+      req.session.level = user.level;
+  
+      // Example: send admins to /admin, others to /
+      if (user.level === 'M') {
+        return res.redirect('/admin');
+      } else {
+        return res.redirect('/');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      return res.render('login', {
+        error: 'An error occurred while logging in. Please try again.',
+        username
+      });
+    }
+  });
+  
 
 app.get("/signup", (req, res) => {
     res.render("signup");
