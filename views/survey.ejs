@@ -2,11 +2,152 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Survey</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    Survey page
+    <h1>Survey Form</h1>
+
+    <form action="/survey" method="POST">
+        <!-- Contact info -->
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+
+        <div>
+            <label for="firstName">First name:</label>
+            <input type="text" id="firstName" name="firstName" required>
+        </div>
+
+        <div>
+            <label for="lastName">Last name:</label>
+            <input type="text" id="lastName" name="lastName" required>
+        </div>
+
+        <div>
+            <label for="dob">Date of birth:</label>
+            <input type="date" id="dob" name="dob" required>
+        </div>
+
+        <div>
+            <label for="role">Role:</label>
+            <select id="role" name="role" required>
+                <option value="participant" selected>Participant</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="phone">Phone number:</label>
+            <input type="tel" id="phone" name="phone">
+        </div>
+
+        <div>
+            <label for="city">City:</label>
+            <input type="text" id="city" name="city">
+        </div>
+
+        <div>
+            <label for="state">State:</label>
+            <input type="text" id="state" name="state">
+        </div>
+
+        <div>
+            <label for="zipcode">Zip code:</label>
+            <input type="text" id="zipcode" name="zipcode">
+        </div>
+
+        <div>
+            <label for="schoolEmployer">School or employer:</label>
+            <input type="text" id="schoolEmployer" name="schoolEmployer">
+        </div>
+
+        <!-- Program area -->
+        <div>
+            <label for="programArea">Program area:</label>
+            <select id="programArea" name="programArea" required>
+                <option value="STEM" selected>STEM</option>
+                <option value="arts">Arts</option>
+                <option value="both">Both</option>
+            </select>
+        </div>
+
+        <!-- Event info -->
+        <div>
+            <label for="eventName">Event name:</label>
+            <input type="text" id="eventName" name="eventName" required>
+        </div>
+
+        <div>
+            <label for="eventType">Event type:</label>
+            <select id="eventType" name="eventType" required>
+                <option value="Leadership">Leadership</option>
+                <option value="STEM">STEM</option>
+                <option value="Arts">Arts</option>
+                <option value="Annual Conference">Annual Conference</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="occurrence">Occurrence:</label>
+            <select id="occurrence" name="occurrence" required>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="annually">Annually</option>
+            </select>
+        </div>
+
+        <!-- Ratings: 1–5 horizontal radio groups -->
+        <fieldset>
+            <legend>Satisfaction (1–5)</legend>
+            <% for (let i = 1; i <= 5; i++) { %>
+                <label style="display:inline-block; margin-right:8px;">
+                    <input type="radio" name="satisfaction" value="<%= i %>" required>
+                    <%= i %>
+                </label>
+            <% } %>
+        </fieldset>
+
+        <fieldset>
+            <legend>Usefulness (1–5)</legend>
+            <% for (let i = 1; i <= 5; i++) { %>
+                <label style="display:inline-block; margin-right:8px;">
+                    <input type="radio" name="usefulness" value="<%= i %>" required>
+                    <%= i %>
+                </label>
+            <% } %>
+        </fieldset>
+
+        <fieldset>
+            <legend>Instructor score (1–5)</legend>
+            <% for (let i = 1; i <= 5; i++) { %>
+                <label style="display:inline-block; margin-right:8px;">
+                    <input type="radio" name="instructorScore" value="<%= i %>" required>
+                    <%= i %>
+                </label>
+            <% } %>
+        </fieldset>
+
+        <fieldset>
+            <legend>Recommendation score (1–5)</legend>
+            <% for (let i = 1; i <= 5; i++) { %>
+                <label style="display:inline-block; margin-right:8px;">
+                    <input type="radio" name="recommendationScore" value="<%= i %>" required>
+                    <%= i %>
+                </label>
+            <% } %>
+        </fieldset>
+
+        <!-- Comments -->
+        <div>
+            <label for="comments">Comments (max 250 characters):</label>
+            <textarea id="comments" name="comments" rows="4" maxlength="250"></textarea>
+        </div>
+
+        <div>
+            <button type="submit">Submit survey</button>
+        </div>
+    </form>
 </body>
 </html>
