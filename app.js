@@ -20,12 +20,11 @@ app.use(express.json());
 const knex = require("knex")({
     client: "pg",
     connection: {
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-        port: process.env.DB_PORT,
-        ssl: { rejectUnauthorized: false } // Required for AWS/Render
+        host : process.env.DB_HOST,
+        user : process.env.DB_USER,
+        password : process.env.DB_PASSWORD,
+        database : process.env.DB_NAME,
+        port : process.env.DB_PORT,
     }
 });
 
@@ -121,32 +120,21 @@ app.post('/login', async (req, res) => {
         }
 
     } catch (err) {
-        console.error('Login error:', err);
-        return res.render('login', { error: 'An error occurred while logging in (Database likely offline).' });
+      console.error('Login error:', err);
+      return res.render('login', {
+        error: 'An error occurred while logging in. Please try again.',
+        username
+      });
     }
+  });
+  
+
+app.get("/signup", (req, res) => {
+    res.render("signup");
 });
 
-// Logout
-app.get('/logout', (req, res) => {
-    req.session.destroy(err => {
-        if (err) console.log(err);
-        res.redirect('/');
-    });
-});
-
-// --- PROTECTED DATA ROUTES ---
-
-// 1. DASHBOARD (STRICTLY MANAGER ONLY)
-app.get("/dashboard", (req, res) => {
-    // Must be logged in
-    if (!req.session.username) return res.redirect('/login');
-    
-    // Must be a Manager
-    if (req.session.level !== 'M') {
-        return res.redirect('/'); // Kick common users back to Home
-    }
-    
-    res.render("dashboard");
+app.get("/donate", (req, res) => {
+    res.render("donate");
 });
 
 // 2. DATA PAGES (Visible to all logged-in users)

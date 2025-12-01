@@ -4,10 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="/styles.css">
-
 </head>
 <body>
-    Participants
+
+    <div class="container mt-5">
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center bg-white py-3">
+                <h4 class="mb-0 text-primary">Participant Directory</h4>
+                <% if (user.role === 'Manager') { %>
+                    <a href="/participants/add" class="btn btn-sm btn-primary">+ Add New</a>
+                <% } %>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0" style="vertical-align: middle;">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <% if (user.role === 'Manager') { %> <th class="text-end pe-4">Actions</th> <% } %>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="ps-4 fw-bold">Aaliyah Brown</td>
+                                <td>aaliyah.brown@example.com</td>
+                                <td><span class="badge bg-secondary rounded-pill">Participant</span></td>
+                                </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
 </body>
 </html>
