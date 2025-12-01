@@ -1,37 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-</head>
+    <title>Ella Rises - Empowering Latinas</title>
+    <%- include('partials/head') %> 
+    </head>
 <body>
-    Landing page test
 
-    <footer>
-            <!-- Social media icons -->
-    <div class="footer-links" style="margin-bottom:10px; gap:16px; justify-content:center;">
-      <a
-        href="https://www.instagram.com/ellarises/"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Ella Rises on Instagram"
-      >
-        <i class="fab fa-instagram"></i>
-      </a>
-      <a
-        href="https://www.facebook.com/EllaRises/"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Ella Rises on Facebook"
-      >
-        <i class="fab fa-facebook-f"></i>
-      </a>
+    <%- include('partials/header') %>
+
+    <header class="py-5 bg-light border-bottom mb-4" 
+            style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1351&q=80'); background-size: cover; background-position: center; color: white; padding: 100px 0;">
+        <div class="container text-center my-5">
+            <h1 class="fw-bolder display-3 mb-3">Empowering the Rising Generation</h1>
+            <p class="lead mb-4" style="max-width: 700px; margin: 0 auto; font-weight: 300;">
+                We inspire Latinas to pursue higher education and embrace their heritage through mentoring, creative workshops, and leadership opportunities.
+            </p>
+            <a class="btn btn-primary btn-lg me-2" href="/donate">Support Our Cause</a>
+            <a class="btn btn-outline-light btn-lg" href="/events">View Programs</a>
+        </div>
+    </header>
+
+    <div class="container mb-5">
+        <div class="row text-center">
+            <div class="col-lg-4 mb-5">
+                <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3 d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 50%;">
+                    <i class="bi bi-brush fs-3"></i>
+                </div>
+                <h2 class="h4 fw-bold">Artistic Confidence</h2>
+                <p class="mb-0 text-muted">Building self-esteem through cultural arts and creative expression workshops.</p>
+            </div>
+            <div class="col-lg-4 mb-5">
+                <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3 d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 50%;">
+                    <i class="bi bi-mortarboard fs-3"></i>
+                </div>
+                <h2 class="h4 fw-bold">Higher Education</h2>
+                <p class="mb-0 text-muted">Mentorship programs connecting students with university partners like UVU and BYU.</p>
+            </div>
+            <div class="col-lg-4 mb-5">
+                <div class="feature bg-primary bg-gradient text-white rounded-3 mb-3 d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 50%;">
+                    <i class="bi bi-people fs-3"></i>
+                </div>
+                <h2 class="h4 fw-bold">Leadership</h2>
+                <p class="mb-0 text-muted">Developing the next generation of community leaders through service and STEAM.</p>
+            </div>
+        </div>
     </div>
+
+    <section class="py-5 bg-light">
+        <div class="container px-5 my-5">
+            <div class="text-center">
+                <h2 class="fw-bolder">Ready to make a difference?</h2>
+                <p class="lead fw-normal text-muted mb-5">Your donation provides art supplies, transportation, and scholarships.</p>
+                <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                    <a class="btn btn-primary btn-lg px-4 me-sm-3" href="/donate">Donate Today</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-5 bg-dark">
+        <div class="container"><p class="m-0 text-center text-white">Copyright &copy; Ella Rises 2025</p></div>
     </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
