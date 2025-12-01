@@ -4,10 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Login - Ella Rises</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <header>
@@ -40,15 +37,15 @@
 
         <form action="/login" method="POST">
           <div class="form-group">
-            <label for="username">Username</label>
+            <label for="email">Email Address</label>
             <input
-              id="username"
-              name="username"
-              type="text"
+              id="email"
+              name="email"
+              type="email"
               required
               autocomplete="username"
-              placeholder="yourusername"
-              value="<%= typeof username !== 'undefined' ? username : '' %>"
+              placeholder="you@example.com"
+              value="<%= typeof email !== 'undefined' ? email : '' %>"
             />
           </div>
 
@@ -81,6 +78,7 @@
   </main>
 
   <footer>
+
     <div class="copyright">
       &copy; <%= new Date().getFullYear() %> Ella Rises. All rights reserved.
     </div>
