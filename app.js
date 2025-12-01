@@ -38,4 +38,32 @@ app.get("/", (req, res) => {
     res.render("index");
 });
 
+app.get("login", (req, res) => {
+    res.render("login");
+});
+
+app.get("admin", (req, res) => {
+    res.render("admin");
+});
+
+app.get("/participants", (req, res) => {
+    res.render("participants");
+});
+
+app.get("/events", (req, res) => {
+    res.render("events");
+});
+
+app.get("/survey", (req, res) => {
+    res.render("survey");
+});
+
+app.get("/milestones", (req, res) => {
+    res.render("milestones");
+});
+
+app.get("/donations", (req, res) => {
+    res.render("donations");
+});
+
 app.listen(port, () => console.log(`Server running on port ${port}`));
