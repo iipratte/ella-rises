@@ -20,53 +20,59 @@
   </header>
 
   <main>
-    <!-- Centered Content for Login Page -->
-    <div class="content" style="max-width:400px; margin:80px auto 0 auto;">
-      <div class="card text-center" style="margin-bottom:32px;">
-        <div class="ella-central mb-2">ELLA</div>
-        <h2 class="welcome-title" style="margin-bottom:10px;">Log in to Ella Rises</h2>
-        <div class="subtitle">Empowering girls in STEAM</div>
-      </div>
-
-      <% if (typeof error !== "undefined" && error) { %>
-        <p style="color:#f44336; margin-bottom:16px; text-align:center;"><%= error %></p>
-      <% } %>
-
-      <form action="/login" method="POST">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            autocomplete="username"
-            value="<%= typeof email !== 'undefined' ? email : '' %>"
-          />
+    <div class="login-container">
+      <div class="card">
+        <div class="card-header">
+          <div class="ella-central">ELLA</div>
+          <h2 class="welcome-title">Welcome Back</h2>
+          <div class="subtitle">Log in to continue your journey</div>
         </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            required
-            autocomplete="current-password"
-          />
+
+        <% if (typeof error !== "undefined" && error) { %>
+          <div class="alert alert-error">
+            <%= error %>
+          </div>
+        <% } %>
+
+        <form action="/login" method="POST">
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autocomplete="username"
+              placeholder="you@example.com"
+              value="<%= typeof email !== 'undefined' ? email : '' %>"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              autocomplete="current-password"
+              placeholder="Enter your password"
+            />
+          </div>
+
+          <button type="submit" class="btn">Log In</button>
+
+          <div class="btn-group">
+            <a href="/signup" class="btn btn-secondary">Sign Up</a>
+            <a href="/" class="btn btn-secondary">Home</a>
+          </div>
+        </form>
+
+        <div class="forgot-password">
+          Forgot your password?
+          <a href="/forgot-password" class="link">Reset it here</a>
         </div>
-        <button type="submit" class="btn">Log In</button>
-        <a href="/signup" class="btn btn-secondary" style="margin-left:10px;">Sign Up</a>
-      </form>
-
-      <!-- Return to Homepage button -->
-      <div style="margin-top:20px;" class="text-center">
-        <a href="/" class="btn btn-secondary">Return to Homepage</a>
       </div>
-
-      <p style="margin-top:16px; font-size:0.95em; color:#666; text-align:center;">
-        Forgot your password?
-        <a href="/forgot-password" style="color:#e91e63;">Reset it here</a>
-      </p>
     </div>
   </main>
 
