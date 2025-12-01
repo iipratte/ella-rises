@@ -63,10 +63,6 @@ app.get("/signup", (req, res) => {
     res.render("signup");
 });
 
-app.get("/donate", (req, res) => {
-    res.render("donate");
-});
-
 // Login Page
 app.get("/login", (req, res) => {
     res.render("login");
@@ -170,9 +166,25 @@ app.get("/milestones", (req, res) => {
     res.render("milestones");
 });
 
+// app.get("/donations", (req, res) => {
+//     if (!req.session.username) return res.redirect('/login');
+//     res.render("donations");
+// });
+
 app.get("/donations", (req, res) => {
-    if (!req.session.username) return res.redirect('/login');
-    res.render("donations");
+    // Check if user is logged in
+        knex.select().from("users")
+            .then(users => {
+                console.log(`Successfully retrieved ${users.length} users from database`);
+                res.render("displayUsers", {users: users});
+            })
+            .catch((err) => {
+                console.error("Database query error:", err.message);
+                res.render("displayUsers", {
+                    users: [],
+                    error_message: `Database error: ${err.message}. Please check if the 'users' table exists.`
+                });
+            });
 });
 
 // --- ADMIN ROUTES (Manager Only) ---
