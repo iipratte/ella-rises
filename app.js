@@ -176,11 +176,11 @@ app.get("/donations", (req, res) => {
         knex.select().from("users")
             .then(users => {
                 console.log(`Successfully retrieved ${users.length} users from database`);
-                res.render("displayUsers", {users: users});
+                res.render("donations", {users: users});
             })
             .catch((err) => {
                 console.error("Database query error:", err.message);
-                res.render("displayUsers", {
+                res.render("donations", {
                     users: [],
                     error_message: `Database error: ${err.message}. Please check if the 'users' table exists.`
                 });
