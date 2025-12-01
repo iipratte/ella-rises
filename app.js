@@ -18,15 +18,15 @@ app.use(express.json());
 
 // --- 2. DATABASE CONNECTION (Knex) ---
 const knex = require("knex")({
-    client: "pg",
-    connection: {
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-        port: process.env.DB_PORT,
-        ssl: { rejectUnauthorized: false } // Required for AWS/Render
-    }
+  client: "pg",
+  connection: {
+    host: process.env.RDS_HOSTNAME,
+    user: process.env.RDS_USERNAME,
+    password: process.env.RDS_PASSWORD,
+    database: process.env.RDS_DB_NAME,
+    port: process.env.RDS_PORT,
+    ssl: process.env.DB_SSL ? { rejectUnauthorized: false } : false// Required for AWS RDS
+  }
 });
 
 // --- 3. SESSION SETUP ---
