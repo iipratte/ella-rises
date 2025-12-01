@@ -76,12 +76,14 @@ app.post('/login', async (req, res) => {
         return res.redirect('/');
       }
     } catch (err) {
-      console.error('Login error:', err);
-      return res.render('login', {
-        error: 'An error occurred while logging in. Please try again.',
-        username
-      });
-    }
+        console.error('Login error:', err);
+        console.error('Error details:', err.message);
+        console.error('Error stack:', err.stack);
+        return res.render('login', {
+          error: 'An error occurred while logging in. Please try again.',
+          username
+        });
+      }
   });
   
 
