@@ -60,8 +60,12 @@ app.get("/events", (req, res) => {
 });
 
 app.get("/survey", (req, res) => {
-    res.render("survey");
+
+    const role = req.user?.role;
+
+    res.render("survey", {role});
 });
+
 
 app.get("/milestones", (req, res) => {
     res.render("milestones");

@@ -7,6 +7,15 @@
 </head>
 <body>
     <h1>Survey Form</h1>
+    <h1>
+        <% if (role === 'User' || role === 'U') { %>
+            Logged in as participant
+        <% } else if (role === 'Manager' || role === 'M') { %>
+            Logged in as Admin
+        <% } else { %>
+            Not logged in
+        <% } %>
+    </h1>
 
     <form action="/survey" method="POST">
         <!-- Contact info -->
@@ -23,39 +32,6 @@
         <div>
             <label for="lastName">Last name:</label>
             <input type="text" id="lastName" name="lastName" required>
-        </div>
-
-        <div>
-            <label for="dob">Date of birth:</label>
-            <input type="date" id="dob" name="dob" required>
-        </div>
-
-        <div>
-            <label for="role">Role:</label>
-            <select id="role" name="role" required>
-                <option value="participant" selected>Participant</option>
-                <option value="admin">Admin</option>
-            </select>
-        </div>
-
-        <div>
-            <label for="phone">Phone number:</label>
-            <input type="tel" id="phone" name="phone">
-        </div>
-
-        <div>
-            <label for="city">City:</label>
-            <input type="text" id="city" name="city">
-        </div>
-
-        <div>
-            <label for="state">State:</label>
-            <input type="text" id="state" name="state">
-        </div>
-
-        <div>
-            <label for="zipcode">Zip code:</label>
-            <input type="text" id="zipcode" name="zipcode">
         </div>
 
         <div>
@@ -100,7 +76,7 @@
 
         <!-- Ratings: 1–5 horizontal radio groups -->
         <fieldset>
-            <legend>Satisfaction (1–5)</legend>
+            <legend>How would you rate your satisfaction of this event? (1–5)</legend>
             <% for (let i = 1; i <= 5; i++) { %>
                 <label style="display:inline-block; margin-right:8px;">
                     <input type="radio" name="satisfaction" value="<%= i %>" required>
@@ -110,7 +86,7 @@
         </fieldset>
 
         <fieldset>
-            <legend>Usefulness (1–5)</legend>
+            <legend>How usefull would this be in your life? (1–5)</legend>
             <% for (let i = 1; i <= 5; i++) { %>
                 <label style="display:inline-block; margin-right:8px;">
                     <input type="radio" name="usefulness" value="<%= i %>" required>
@@ -120,7 +96,7 @@
         </fieldset>
 
         <fieldset>
-            <legend>Instructor score (1–5)</legend>
+            <legend>How would you rate your instructor for this event? (1–5)</legend>
             <% for (let i = 1; i <= 5; i++) { %>
                 <label style="display:inline-block; margin-right:8px;">
                     <input type="radio" name="instructorScore" value="<%= i %>" required>
@@ -130,7 +106,7 @@
         </fieldset>
 
         <fieldset>
-            <legend>Recommendation score (1–5)</legend>
+            <legend>Would you reccomend this event to others? (1–5)</legend>
             <% for (let i = 1; i <= 5; i++) { %>
                 <label style="display:inline-block; margin-right:8px;">
                     <input type="radio" name="recommendationScore" value="<%= i %>" required>
