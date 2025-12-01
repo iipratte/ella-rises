@@ -6,5 +6,23 @@
     "express-session": "^1.18.2",
     "knex": "^3.1.0",
     "pg": "^8.16.3"
-  }
+  },
+  "name": "ella-rises",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "devDependencies": {},
+  "scripts": {
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iipratte/ella-rises.git"
+  },
+  "author": "Caleb Caten, Brodie Newman, Isaac Pratte, Porter Rasmussen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/iipratte/ella-rises/issues"
+  },
+  "homepage": "https://github.com/iipratte/ella-rises#readme"
 }
