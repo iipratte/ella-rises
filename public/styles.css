@@ -1,15 +1,19 @@
-/* Global Styles */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* public/styles.css */
+
+:root {
+    /* Brand Colors */
+    --ella-primary: #be1e68; /* Deep Rose/Magenta */
+    --ella-secondary: #ffc107; /* Gold/Yellow for accents */
+    --ella-dark: #212529;
+    --ella-light: #f8f9fa;
+    --text-main: #333333;
 }
 
 body {
-  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   line-height: 1.6;
-  color: #3A3F3B;
-  background: linear-gradient(135deg, #FFD8D1 0%, #F9AFB1 100%);
+  color: #333;
+  background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
   min-height: 100vh;
 }
 
@@ -18,7 +22,7 @@ header {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   padding: 15px 30px;
-  box-shadow: 0 2px 20px rgba(206, 50, 91, 0.1);
+  box-shadow: 0 2px 20px rgba(233, 30, 99, 0.1);
   position: fixed;
   top: 0;
   width: 100%;
@@ -36,11 +40,10 @@ nav ul {
 
 nav a {
   text-decoration: none;
-  color: #3A3F3B;
+  color: #333;
   font-weight: 500;
   transition: color 0.3s, transform 0.3s;
   position: relative;
-  font-family: 'Montserrat', sans-serif;
 }
 
 nav a::after {
@@ -50,7 +53,7 @@ nav a::after {
   left: 0;
   width: 0;
   height: 2px;
-  background: #CE325B;
+  background: #e91e63;
   transition: width 0.3s;
 }
 
@@ -59,7 +62,7 @@ nav a:hover::after {
 }
 
 nav a:hover {
-  color: #CE325B;
+  color: #e91e63;
 }
 
 /* Main Container */
@@ -81,47 +84,33 @@ main {
 .logo {
   font-size: 28px;
   font-weight: bold;
-  background: linear-gradient(135deg, #CE325B, #F9AFB1);
+  background: linear-gradient(135deg, #e91e63, #f06292);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   display: block;
   letter-spacing: 1px;
-  font-family: 'TT Milk Script', cursive;
-}
-
-/* Logo Image */
-.logo-image {
-  height: 50px;
-  width: auto;
-  display: block;
-}
-
-header .logo-image {
-  height: 45px;
 }
 
 /* Welcome Section */
 .welcome-title {
   font-size: 2em;
-  color: #3A3F3B;
+  color: #333;
   margin-bottom: 10px;
   font-weight: 400;
-  font-family: 'DM Serif Display', serif;
 }
 
 .subtitle {
   font-size: 1.1em;
-  color: #9AB59D;
+  color: #666;
   margin-top: 15px;
   font-weight: 300;
-  font-family: 'Montserrat', sans-serif;
 }
 
 .ella-central {
   width: 120px;
   height: 120px;
-  background: linear-gradient(135deg, #CE325B, #F9AFB1);
+  background: linear-gradient(135deg, #e91e63, #f06292);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -130,11 +119,10 @@ header .logo-image {
   font-weight: bold;
   color: white;
   text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  box-shadow: 0 8px 25px rgba(206, 50, 91, 0.4);
+  box-shadow: 0 8px 25px rgba(233, 30, 99, 0.4);
   position: relative;
   margin: 0 auto 20px auto;
   transition: transform 0.3s ease;
-  font-family: 'TT Milk Script', cursive;
 }
 
 .ella-central:hover {
@@ -144,7 +132,6 @@ header .logo-image {
 .ella-central::before {
   content: 'ELLA';
   position: absolute;
-  font-family: 'TT Milk Script', cursive;
 }
 
 /* Login Container */
@@ -157,7 +144,7 @@ header .logo-image {
 .btn {
   display: inline-block;
   padding: 14px 28px;
-  background: linear-gradient(135deg, #CE325B, #F9AFB1);
+  background: linear-gradient(135deg, #e91e63, #f06292);
   color: white;
   text-decoration: none;
   border-radius: 30px;
@@ -168,10 +155,9 @@ header .logo-image {
   cursor: pointer;
   width: 100%;
   font-size: 16px;
-  box-shadow: 0 4px 15px rgba(206, 50, 91, 0.3);
+  box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
   position: relative;
   overflow: hidden;
-  font-family: 'Montserrat', sans-serif;
 }
 
 .btn::before {
@@ -194,7 +180,7 @@ header .logo-image {
 
 .btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(206, 50, 91, 0.4);
+  box-shadow: 0 6px 20px rgba(233, 30, 99, 0.4);
 }
 
 .btn:active {
@@ -203,15 +189,15 @@ header .logo-image {
 
 .btn-secondary {
   background: transparent;
-  color: #CE325B;
-  border: 2px solid #CE325B;
+  color: #e91e63;
+  border: 2px solid #e91e63;
   box-shadow: none;
 }
 
 .btn-secondary:hover {
-  background: linear-gradient(135deg, #CE325B, #F9AFB1);
+  background: linear-gradient(135deg, #e91e63, #f06292);
   color: white;
-  box-shadow: 0 4px 15px rgba(206, 50, 91, 0.3);
+  box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
 }
 
 .btn-group {
@@ -232,7 +218,7 @@ footer {
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
   text-align: center;
-  border-top: 1px solid rgba(206, 50, 91, 0.1);
+  border-top: 1px solid rgba(233, 30, 99, 0.1);
 }
 
 .footer-links {
@@ -244,21 +230,19 @@ footer {
 }
 
 .footer-links a {
-  color: #9AB59D;
+  color: #666;
   text-decoration: none;
   transition: color 0.3s;
   font-size: 14px;
-  font-family: 'Montserrat', sans-serif;
 }
 
 .footer-links a:hover {
-  color: #CE325B;
+  color: #e91e63;
 }
 
 .copyright {
-  color: #99B7C6;
+  color: #999;
   font-size: 0.9em;
-  font-family: 'Montserrat', sans-serif;
 }
 
 /* Form styles */
@@ -270,11 +254,10 @@ footer {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: #3A3F3B;
+  color: #333;
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-family: 'Montserrat', sans-serif;
 }
 
 .form-group input,
@@ -282,20 +265,19 @@ footer {
 .form-group textarea {
   width: 100%;
   padding: 14px 16px;
-  border: 2px solid #F9F5EA;
+  border: 2px solid #f0f0f0;
   border-radius: 12px;
   font-size: 16px;
   transition: all 0.3s;
   background: white;
-  font-family: 'Montserrat', sans-serif;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #CE325B;
-  box-shadow: 0 0 0 4px rgba(206, 50, 91, 0.1);
+  border-color: #e91e63;
+  box-shadow: 0 0 0 4px rgba(233, 30, 99, 0.1);
   transform: translateY(-2px);
 }
 
@@ -304,14 +286,14 @@ footer {
   background: white;
   border-radius: 20px;
   padding: 32px;
-  box-shadow: 0 10px 40px rgba(206, 50, 91, 0.15);
+  box-shadow: 0 10px 40px rgba(233, 30, 99, 0.15);
   margin-bottom: 24px;
   transition: all 0.3s ease;
-  border: 1px solid rgba(206, 50, 91, 0.1);
+  border: 1px solid rgba(233, 30, 99, 0.1);
 }
 
 .card:hover {
-  box-shadow: 0 15px 50px rgba(206, 50, 91, 0.2);
+  box-shadow: 0 15px 50px rgba(233, 30, 99, 0.2);
   transform: translateY(-5px);
 }
 
@@ -328,33 +310,31 @@ footer {
   text-align: center;
   font-size: 14px;
   animation: slideDown 0.3s ease;
-  font-family: 'Montserrat', sans-serif;
 }
 
 .alert-error {
-  background: #FFD8D1;
-  color: #CE325B;
-  border: 1px solid #F9AFB1;
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
 }
 
 .alert-success {
-  background: #9AB59D;
-  color: #3A3F3B;
-  border: 1px solid #9AB59D;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
 }
 
 /* Links */
 .link {
-  color: #CE325B;
+  color: #e91e63;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s;
   position: relative;
-  font-family: 'Montserrat', sans-serif;
 }
 
 .link:hover {
-  color: #F4B092;
+  color: #c2185b;
   text-decoration: underline;
 }
 
@@ -362,8 +342,7 @@ footer {
   text-align: center;
   margin-top: 20px;
   font-size: 14px;
-  color: #9AB59D;
-  font-family: 'Montserrat', sans-serif;
+  color: #666;
 }
 
 /* Utility classes */
@@ -420,14 +399,6 @@ footer {
   .card {
     padding: 24px;
   }
-
-  .logo-image {
-    height: 40px;
-  }
-
-  header .logo-image {
-    height: 35px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -456,13 +427,5 @@ footer {
 
   nav a {
     font-size: 14px;
-  }
-
-  .logo-image {
-    height: 35px;
-  }
-
-  header .logo-image {
-    height: 30px;
   }
 }
