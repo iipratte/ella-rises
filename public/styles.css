@@ -1,18 +1,3 @@
-/* Brand palette */
-:root {
-  --blue:   #99B7C6;
-  --purple: #978EC4;
-  --cream:  #F9F5EA;
-  --pink-1: #FFD8D1;
-  --pink-2: #F9AFB1;
-  --green:  #9AB59D;
-  --charc:  #3A3F3B;
-  --peach:  #F4B092;
-  --rose:   #CE325B;
-
-  --text-main: var(--charc);
-}
-
 /* Global Styles */
 * {
   margin: 0;
@@ -21,19 +6,19 @@
 }
 
 body {
-  font-family: "Montserrat", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   line-height: 1.6;
-  color: var(--text-main);
-  background: linear-gradient(135deg, var(--pink-1) 0%, var(--pink-2) 100%);
+  color: #333;
+  background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
   min-height: 100vh;
 }
 
 /* Header and Navigation */
 header {
-  background: rgba(249, 245, 234, 0.95); /* cream */
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   padding: 15px 30px;
-  box-shadow: 0 2px 20px rgba(58, 63, 59, 0.1); /* charc */
+  box-shadow: 0 2px 20px rgba(233, 30, 99, 0.1);
   position: fixed;
   top: 0;
   width: 100%;
@@ -51,7 +36,7 @@ nav ul {
 
 nav a {
   text-decoration: none;
-  color: var(--text-main);
+  color: #333;
   font-weight: 500;
   transition: color 0.3s, transform 0.3s;
   position: relative;
@@ -64,7 +49,7 @@ nav a::after {
   left: 0;
   width: 0;
   height: 2px;
-  background: var(--rose);
+  background: #e91e63;
   transition: width 0.3s;
 }
 
@@ -73,7 +58,7 @@ nav a:hover::after {
 }
 
 nav a:hover {
-  color: var(--rose);
+  color: #e91e63;
 }
 
 /* Main Container */
@@ -91,65 +76,58 @@ main {
   padding: 40px 0;
 }
 
-/* Logo text (if you still use text instead of img) */
+/* Logo */
 .logo {
   font-size: 28px;
   font-weight: bold;
-  color: var(--rose);
+  background: linear-gradient(135deg, #e91e63, #f06292);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: block;
   letter-spacing: 1px;
-}
-
-/* Circle with actual logo image */
-.ella-central {
-  width: 140px;
-  height: 140px;
-  background: var(--pink-1);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 25px rgba(58, 63, 59, 0.25);
-  position: relative;
-  margin: 0 auto 20px auto;
-  transition: transform 0.3s ease;
-  overflow: hidden;
-  border: 4px solid var(--charc);
-}
-
-.ella-central img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Example HTML:
-<div class="ella-central">
-  <img src="Ella-Rises-Logo-2.jpg" alt="Ella Rises logo">
-</div>
-*/
-
-.ella-central:hover {
-  transform: scale(1.05) rotate(3deg);
-}
-
-/* remove the text content */
-.ella-central::before {
-  content: '';
 }
 
 /* Welcome Section */
 .welcome-title {
   font-size: 2em;
-  color: var(--charc);
+  color: #333;
   margin-bottom: 10px;
   font-weight: 400;
 }
 
 .subtitle {
   font-size: 1.1em;
-  color: #777;
+  color: #666;
   margin-top: 15px;
   font-weight: 300;
+}
+
+.ella-central {
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(135deg, #e91e63, #f06292);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 25px rgba(233, 30, 99, 0.4);
+  position: relative;
+  margin: 0 auto 20px auto;
+  transition: transform 0.3s ease;
+}
+
+.ella-central:hover {
+  transform: scale(1.05) rotate(5deg);
+}
+
+.ella-central::before {
+  content: 'ELLA';
+  position: absolute;
 }
 
 /* Login Container */
@@ -162,7 +140,7 @@ main {
 .btn {
   display: inline-block;
   padding: 14px 28px;
-  background: linear-gradient(135deg, var(--rose), var(--peach));
+  background: linear-gradient(135deg, #e91e63, #f06292);
   color: white;
   text-decoration: none;
   border-radius: 30px;
@@ -173,7 +151,7 @@ main {
   cursor: pointer;
   width: 100%;
   font-size: 16px;
-  box-shadow: 0 4px 15px rgba(206, 50, 91, 0.3);
+  box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -186,7 +164,7 @@ main {
   width: 0;
   height: 0;
   border-radius: 50%;
-  background: rgba(249, 245, 234, 0.4);
+  background: rgba(255, 255, 255, 0.3);
   transform: translate(-50%, -50%);
   transition: width 0.6s, height 0.6s;
 }
@@ -198,7 +176,7 @@ main {
 
 .btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(206, 50, 91, 0.4);
+  box-shadow: 0 6px 20px rgba(233, 30, 99, 0.4);
 }
 
 .btn:active {
@@ -207,18 +185,17 @@ main {
 
 .btn-secondary {
   background: transparent;
-  color: var(--rose);
-  border: 2px solid var(--rose);
+  color: #e91e63;
+  border: 2px solid #e91e63;
   box-shadow: none;
 }
 
 .btn-secondary:hover {
-  background: linear-gradient(135deg, var(--rose), var(--peach));
+  background: linear-gradient(135deg, #e91e63, #f06292);
   color: white;
-  box-shadow: 0 4px 15px rgba(206, 50, 91, 0.3);
+  box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
 }
 
-/* Button group */
 .btn-group {
   display: flex;
   gap: 10px;
@@ -234,10 +211,10 @@ main {
 footer {
   margin-top: 80px;
   padding: 40px 20px;
-  background: rgba(249, 245, 234, 0.9);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
   text-align: center;
-  border-top: 1px solid rgba(58, 63, 59, 0.1);
+  border-top: 1px solid rgba(233, 30, 99, 0.1);
 }
 
 .footer-links {
@@ -256,7 +233,7 @@ footer {
 }
 
 .footer-links a:hover {
-  color: var(--rose);
+  color: #e91e63;
 }
 
 .copyright {
@@ -273,7 +250,7 @@ footer {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: var(--charc);
+  color: #333;
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -295,8 +272,8 @@ footer {
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: var(--rose);
-  box-shadow: 0 0 0 4px rgba(206, 50, 91, 0.15);
+  border-color: #e91e63;
+  box-shadow: 0 0 0 4px rgba(233, 30, 99, 0.1);
   transform: translateY(-2px);
 }
 
@@ -305,14 +282,14 @@ footer {
   background: white;
   border-radius: 20px;
   padding: 32px;
-  box-shadow: 0 10px 40px rgba(58, 63, 59, 0.15);
+  box-shadow: 0 10px 40px rgba(233, 30, 99, 0.15);
   margin-bottom: 24px;
   transition: all 0.3s ease;
-  border: 1px solid rgba(58, 63, 59, 0.08);
+  border: 1px solid rgba(233, 30, 99, 0.1);
 }
 
 .card:hover {
-  box-shadow: 0 15px 50px rgba(58, 63, 59, 0.25);
+  box-shadow: 0 15px 50px rgba(233, 30, 99, 0.2);
   transform: translateY(-5px);
 }
 
@@ -345,7 +322,7 @@ footer {
 
 /* Links */
 .link {
-  color: var(--rose);
+  color: #e91e63;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s;
@@ -353,7 +330,7 @@ footer {
 }
 
 .link:hover {
-  color: var(--peach);
+  color: #c2185b;
   text-decoration: underline;
 }
 
@@ -401,11 +378,11 @@ footer {
   .welcome-title {
     font-size: 1.6em;
   }
-
+  
   header {
     padding: 12px 20px;
   }
-
+  
   nav ul {
     gap: 15px;
   }
@@ -422,15 +399,16 @@ footer {
 
 @media (max-width: 480px) {
   .ella-central {
-    width: 100px;
-    height: 100px;
+    width: 90px;
+    height: 90px;
+    font-size: 1.5em;
   }
-
+  
   .btn {
     padding: 12px 20px;
     font-size: 15px;
   }
-
+  
   .welcome-title {
     font-size: 1.4em;
   }
