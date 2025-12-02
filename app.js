@@ -117,7 +117,13 @@ app.post('/signup', async (req, res) => {
         res.redirect('/dashboard');
   
     } catch (error) {
-        console.error('Signup error:', error);
+        console.error('Signup error details:', {
+            message: error.message,
+            code: error.code,
+            constraint: error.constraint,
+            table: error.table,
+            stack: error.stack
+        });
         res.render('signup', {
             error: 'An error occurred during signup. Please try again.',
             username,
