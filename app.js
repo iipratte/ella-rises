@@ -17,15 +17,15 @@ app.use(express.json());
 
 // --- 2. DATABASE CONNECTION (Knex) ---
 const knex = require("knex")({
-    client: "pg",
-    connection: {
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-        port: process.env.DB_PORT,
-        ssl: { rejectUnauthorized: false } // Required for AWS/Render
-    }
+  client: "pg",
+  connection: {
+    host: process.env.RDS_HOSTNAME,
+    user: process.env.RDS_USERNAME,
+    password: process.env.RDS_PASSWORD,
+    database: process.env.RDS_DB_NAME,
+    port: process.env.RDS_PORT,
+    ssl: { rejectUnauthorized: false, require: true } // Force SSL
+  }
 });
 
 // --- 3. SESSION SETUP ---
@@ -375,9 +375,25 @@ app.get("/milestones", (req, res) => {
     res.render("milestones");
 });
 
+// app.get("/donations", (req, res) => {
+//     if (!req.session.username) return res.redirect('/login');
+//     res.render("donations");
+// });
+
 app.get("/donations", (req, res) => {
-    if (!req.session.username) return res.redirect('/login');
-    res.render("donations");
+    // Check if user is logged in
+        knex.select().from("users")
+            .then(users => {
+                console.log(`Successfully retrieved ${users.length} users from database`);
+                res.render("donations", {users: users});
+            })
+            .catch((err) => {
+                console.error("Database query error:", err.message);
+                res.render("donations", {
+                    users: [],
+                    error_message: `Database error: ${err.message}. Please check if the 'users' table exists.`
+                });
+            });
 });
 
 // --- ADMIN ROUTES ---
