@@ -13,7 +13,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h1 class="text-primary fw-bold" style="font-family: 'DM Serif Display', serif;">Participant Directory</h1>
-                <p class="text-muted">Manage program participants, track milestones, and contact information.</p>
+                <p class="text-muted">Manage program participants and track milestones.</p>
             </div>
             
             <div class="d-flex gap-2">
@@ -39,8 +39,10 @@
                     <table class="table table-hover table-striped mb-0" style="vertical-align: middle;">
                         <thead class="table-light">
                             <tr>
-                                <th class="ps-4 py-3">Name</th>
-                                <th class="py-3">Details</th> <th class="py-3">Role</th>
+                                <th class="ps-4 py-3">ID</th>
+                                <th class="py-3">Username</th>
+                                <th class="py-3">School / Employer</th>
+                                <th class="py-3">Field of Interest</th>
                                 <th class="py-3">Milestones</th>
                                 <% if (user && user.role === 'Manager') { %> 
                                     <th class="text-end pe-4 py-3">Actions</th> 
@@ -51,7 +53,7 @@
                             
                             <% if (participants.length === 0) { %>
                                 <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted">
+                                    <td colspan="6" class="text-center py-5 text-muted">
                                         No participants found in the database.
                                     </td>
                                 </tr>
@@ -59,36 +61,27 @@
                                 
                                 <% participants.forEach(p => { %>
                                     <tr>
-                                        <td class="ps-4">
-                                            <div class="fw-bold"><%= p.participantfirstname %> <%= p.participantlastname %></div>
-                                            <div class="small text-muted"><%= p.participantemail %></div>
-                                            <div class="small text-muted"><i class="bi bi-geo-alt-fill me-1"></i><%= p.participantcity || 'N/A' %></div>
+                                        <td class="ps-4 text-muted small">
+                                            <%= p.participantid %>
+                                        </td>
+
+                                        <td class="fw-bold text-primary">
+                                            <%= p.username %>
                                         </td>
                                         
                                         <td>
-                                            <% if (p.participantschooloremployer) { %>
-                                                <div class="small"><strong>Org:</strong> <%= p.participantschooloremployer %></div>
-                                            <% } %>
-                                            <% if (p.participantfieldofinterest) { %>
-                                                <div class="small text-secondary"><strong>Interest:</strong> <%= p.participantfieldofinterest %></div>
-                                            <% } else { %>
-                                                <span class="text-muted small">-</span>
-                                            <% } %>
+                                            <%= p.participantschooloremployer || '-' %>
                                         </td>
-                                         
+
                                         <td>
-                                            <% if (p.participantrole === 'Donor') { %>
-                                                <span class="badge bg-success rounded-pill">Donor</span>
-                                            <% } else if (p.participantrole === 'Mentor') { %>
-                                                <span class="badge bg-info text-dark rounded-pill">Mentor</span>
-                                            <% } else { %>
-                                                <span class="badge bg-secondary rounded-pill">Participant</span>
-                                            <% } %>
+                                            <%= p.participantfieldofinterest || '-' %>
                                         </td>
 
                                         <td>
                                             <% if (p.milestone_count > 0) { %>
-                                                <span class="badge bg-primary bg-opacity-75 rounded-pill"><%= p.milestone_count %> Achieved</span>
+                                                <span class="badge bg-primary bg-opacity-75 rounded-pill">
+                                                    <%= p.milestone_count %> Achieved
+                                                </span>
                                             <% } else { %>
                                                 <span class="text-muted small">-</span>
                                             <% } %>
@@ -101,7 +94,7 @@
                                                         <i class="bi bi-pencil-fill"></i>
                                                     </a>
                                                     
-                                                    <form action="/participants/delete/<%= p.participantid %>" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this participant?');">
+                                                    <form action="/participants/delete/<%= p.participantid %>" method="POST" class="d-inline" onsubmit="return confirm('Delete participant <%= p.username %>?');">
                                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                                                             <i class="bi bi-trash-fill"></i>
                                                         </button>
