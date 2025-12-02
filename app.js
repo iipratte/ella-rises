@@ -60,6 +60,69 @@ app.get("/signup", (req, res) => {
     res.render("signup");
 });
 
+app.post('/signup', async (req, res) => {
+    const { firstName, lastName, email, phone, dob, city, state, zipcode } = req.body;
+  
+    try {
+      // Check if user already exists
+      const existingUser = await knex('users')
+        .where({ email: email.toLowerCase() })
+        .first();
+  
+      if (existingUser) {
+        return res.render('signup', {
+          error: 'An account with this email already exists',
+          firstName,
+          lastName,
+          email,
+          phone,
+          dob,
+          city,
+          state,
+          zipcode
+        });
+      }
+  
+      // Insert new user into database
+      const [newUser] = await knex('users')
+        .insert({
+          first_name: firstName,
+          last_name: lastName,
+          email: email.toLowerCase(),
+          phone,
+          date_of_birth: dob,
+          city,
+          state,
+          zipcode,
+          created_at: knex.fn.now(),
+          updated_at: knex.fn.now()
+        })
+        .returning('*');
+  
+      // Set up session
+      req.session.userId = newUser.id;
+      req.session.userEmail = newUser.email;
+  
+      // Redirect to dashboard or home
+      res.redirect('/dashboard');
+  
+    } catch (error) {
+      console.error('Signup error:', error);
+      res.render('signup', {
+        error: 'An error occurred during signup. Please try again.',
+        firstName,
+        lastName,
+        email,
+        phone,
+        dob,
+        city,
+        state,
+        zipcode
+      });
+    }
+  });
+  
+
 // --- DONATION ROUTES ---
 
 // 1. Show the Donation Form
