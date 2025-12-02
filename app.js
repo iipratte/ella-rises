@@ -41,6 +41,7 @@ app.use((req, res, next) => {
     if (req.session && req.session.username) {
         res.locals.user = {
             username: req.session.username,
+            firstName: req.session.firstName,
             role: req.session.level === 'M' ? 'Manager' : 'User'
         };
     } else {
@@ -153,12 +154,14 @@ app.post('/login', async (req, res) => {
     if (username === 'admin' && password === 'test') {
         req.session.userId = 888;
         req.session.username = 'Admin';
+        req.session.firstName = 'AdminName';
         req.session.level = 'M'; 
         return res.redirect('/dashboard'); 
     }
     if (username === 'user' && password === 'test') {
         req.session.userId = 999;
         req.session.username = 'Visitor';
+        req.session.firstName = 'VisitorName';
         req.session.level = 'U'; 
         return res.redirect('/'); 
     }
@@ -177,6 +180,7 @@ app.post('/login', async (req, res) => {
 
         req.session.userId = user.id;
         req.session.username = user.username;
+        req.session.firstName = user.firstname;
         req.session.level = user.level;
 
         if (req.session.level === 'M') {

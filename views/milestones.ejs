@@ -11,16 +11,15 @@
 
     <div class="container mt-5 mb-5">
         <h1 class="fw-bold text-primary mb-4" style="font-family: 'DM Serif Display', serif;">Milestone Tracking</h1>
-        <p class="text-muted mb-4">Managers can view and record long-term achievement indicators for each participant.</p>
-
-        <div class="card shadow-sm border-0">
+        
+        <div class="card shadow border-0">
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover table-striped mb-0">
                         <thead class="table-dark">
                             <tr>
                                 <th class="ps-4 py-3">Participant Name</th>
-                                <th class="py-3 text-center">Total Milestones</th>
+                                <th class="py-3 text-center">Total Achievements</th>
                                 <th class="py-3 text-end pe-4">Actions</th>
                             </tr>
                         </thead>
@@ -34,17 +33,16 @@
                                             <%= p.participantfirstname %> <%= p.participantlastname %>
                                         </td>
                                         <td class="text-center">
-                                            <span class="badge bg-primary rounded-pill"><%= p.total_milestones_achieved %></span>
+                                            <% if (p.total_milestones_achieved > 0) { %>
+                                                <span class="badge bg-success rounded-pill"><%= p.total_milestones_achieved %></span>
+                                            <% } else { %>
+                                                <span class="badge bg-secondary rounded-pill">0</span>
+                                            <% } %>
                                         </td>
                                         <td class="text-end pe-4">
-                                            <div class="btn-group">
-                                                <a href="/milestones/view/<%= p.participantid %>" class="btn btn-sm btn-outline-info" title="View Details">
-                                                    <i class="bi bi-eye"></i> View/Edit
-                                                </a>
-                                                <a href="/milestones/add/<%= p.participantid %>" class="btn btn-sm btn-success" title="Add Milestone">
-                                                    <i class="bi bi-plus"></i> Add
-                                                </a>
-                                            </div>
+                                            <a href="/milestones/view/<%= p.participantid %>" class="btn btn-sm btn-outline-primary">
+                                                View & Manage
+                                            </a>
                                         </td>
                                     </tr>
                                 <% }) %>
