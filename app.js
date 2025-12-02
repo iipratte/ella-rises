@@ -377,6 +377,81 @@ app.get("/milestones", async (req, res) => {
     }
 });
 
+// --- MILESTONE DETAIL & MAINTENANCE ROUTES ---
+
+// 2. VIEW DETAILS (Specific Participant's History)
+app.get("/milestones/view/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    const pid = req.params.id;
+
+    try {
+        // A. Get the Participant Info
+        const participant = await knex('participants').where({ participantid: pid }).first();
+        
+        // B. Get their Milestones
+        const milestones = await knex('milestones')
+            .where({ participantid: pid })
+            .orderBy('dateachieved', 'desc');
+
+        res.render("milestoneDetails", { participant, milestones });
+
+    } catch (err) {
+        console.error("Error fetching detail:", err);
+        res.redirect('/milestones');
+    }
+});
+
+// 3. SHOW ADD FORM
+app.get("/milestones/add/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    
+    const pid = req.params.id;
+    
+    // We need the name to show on the form header ("Adding for Maria...")
+    const participant = await knex('participants').where({ participantid: pid }).first();
+    
+    res.render("addMilestone", { participant });
+});
+
+// 4. PROCESS ADD FORM
+app.post("/milestones/add/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    const pid = req.params.id;
+    const { milestoneName, dateAchieved, notes } = req.body;
+
+    try {
+        await knex('milestones').insert({
+            participantid: pid,
+            milestonename: milestoneName,
+            dateachieved: dateAchieved,
+            milestonenotes: notes
+        });
+
+        // Redirect back to that person's detail page
+        res.redirect(`/milestones/view/${pid}`);
+
+    } catch (err) {
+        console.error("Error creating milestone:", err);
+        res.send("Error adding milestone.");
+    }
+});
+
+// 5. DELETE MILESTONE
+app.post("/milestones/delete/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    
+    const mid = req.params.id;
+    // We need the participant ID to redirect back correctly
+    const milestone = await knex('milestones').where({ milestoneid: mid }).first();
+    const pid = milestone.participantid;
+
+    await knex('milestones').where({ milestoneid: mid }).del();
+    
+    res.redirect(`/milestones/view/${pid}`);
+});
+
 // app.get("/donations", (req, res) => {
 //     if (!req.session.username) return res.redirect('/login');
 //     res.render("donations");
