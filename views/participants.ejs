@@ -13,11 +13,11 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h1 class="text-primary fw-bold" style="font-family: 'DM Serif Display', serif;">Participant Directory</h1>
-                <p class="text-muted">Manage program participants and contact information.</p>
+                <p class="text-muted">Manage program participants, track milestones, and contact information.</p>
             </div>
             
-            <div>
-                 <button class="btn btn-outline-secondary me-2" onclick="window.print()">
+            <div class="d-flex gap-2">
+                 <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
                     <i class="bi bi-printer"></i> Print List
                  </button>
             </div>
@@ -42,7 +42,8 @@
                                 <th class="ps-4 py-3">Name</th>
                                 <th class="py-3">Email</th>
                                 <th class="py-3">Role</th>
-                                <th class="py-3">City</th> <% if (user && user.role === 'Manager') { %> 
+                                <th class="py-3">Milestones</th> <th class="py-3">City</th>
+                                <% if (user && user.role === 'Manager') { %> 
                                     <th class="text-end pe-4 py-3">Actions</th> 
                                 <% } %>
                             </tr>
@@ -51,7 +52,7 @@
                             
                             <% if (participants.length === 0) { %>
                                 <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted">
+                                    <td colspan="6" class="text-center py-5 text-muted">
                                         No participants found in the database.
                                     </td>
                                 </tr>
@@ -68,7 +69,7 @@
                                                 <%= p.participantemail %>
                                             </a>
                                         </td>
-                                        
+                                         
                                         <td>
                                             <% if (p.participantrole === 'Donor') { %>
                                                 <span class="badge bg-success rounded-pill">Donor</span>
@@ -76,6 +77,14 @@
                                                 <span class="badge bg-info text-dark rounded-pill">Mentor</span>
                                             <% } else { %>
                                                 <span class="badge bg-secondary rounded-pill">Participant</span>
+                                            <% } %>
+                                        </td>
+
+                                        <td>
+                                            <% if (p.milestone_count > 0) { %>
+                                                <span class="badge bg-primary bg-opacity-75 rounded-pill"><%= p.milestone_count %> Achieved</span>
+                                            <% } else { %>
+                                                <span class="text-muted small">-</span>
                                             <% } %>
                                         </td>
 
@@ -88,7 +97,7 @@
                                                         <i class="bi bi-pencil-fill"></i>
                                                     </a>
                                                     
-                                                    <form action="/participants/delete/<%= p.participantid %>" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete <%= p.participantfirstname %>?');">
+                                                    <form action="/participants/delete/<%= p.participantid %>" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete <%= p.participantfirstname %>? This cannot be undone.');">
                                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                                                             <i class="bi bi-trash-fill"></i>
                                                         </button>
@@ -98,7 +107,8 @@
                                         <% } %>
                                     </tr>
                                 <% }) %>
-                                <% } %>
+                                
+                            <% } %>
                         </tbody>
                     </table>
                 </div>
