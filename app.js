@@ -62,19 +62,19 @@ app.get("/signup", (req, res) => {
 
 app.post('/signup', async (req, res) => {
     const { username, password, firstname, lastname, userdob, email, phone, city, state, zip } = req.body;
-  
+ 
     try {
         // Check if user already exists (by email or username)
         const existingUser = await knex('users')
             .where('email', email.toLowerCase())
             .orWhere('username', username.toLowerCase())
             .first();
-  
+ 
         if (existingUser) {
             return res.render('signup', {
                 error: 'An account with this email or username already exists',
                 username,
-                password: '', // Don't repopulate password
+                password: '',
                 firstname,
                 lastname,
                 userdob,
@@ -85,16 +85,12 @@ app.post('/signup', async (req, res) => {
                 zip
             });
         }
-  
-        // Hash password
-        const saltRounds = 12;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-  
-        // Insert new user into database
+ 
+        // Insert new user into database (plain password)
         const [newUser] = await knex('users')
             .insert({
                 username: username.toLowerCase(),
-                password: hashedPassword,
+                password: password,  // Plain text
                 firstname,
                 lastname,
                 userdob,
@@ -107,15 +103,14 @@ app.post('/signup', async (req, res) => {
                 updated_at: knex.fn.now()
             })
             .returning('*');
-  
+ 
         // Set up session
         req.session.userId = newUser.id;
         req.session.userEmail = newUser.email;
         req.session.username = newUser.username;
-  
-        // Redirect to dashboard or home
+ 
         res.redirect('/dashboard');
-  
+ 
     } catch (error) {
         console.error('Signup error details:', {
             message: error.message,
@@ -127,7 +122,7 @@ app.post('/signup', async (req, res) => {
         res.render('signup', {
             error: 'An error occurred during signup. Please try again.',
             username,
-            password: '', // Don't repopulate password
+            password: '',
             firstname,
             lastname,
             userdob,
@@ -139,6 +134,7 @@ app.post('/signup', async (req, res) => {
         });
     }
 });
+
 
 
 // --- DONATION ROUTES ---
