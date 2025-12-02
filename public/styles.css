@@ -1,97 +1,209 @@
-/* public/styles.css */
+/* =========================================
+   ELLA RISES - BRAND MATCH THEME
+   Palette: Raspberry, Blush, Charcoal, White
+   Aesthetic: Editorial, Empowering, Clean
+   ========================================= */
 
 :root {
-  /* Brand Colors */
-  --ella-primary: #be1e68; /* Deep Rose/Magenta */
-  --ella-secondary: #ffc107; /* Gold/Yellow for accents */
-  --ella-dark: #212529;
-  --ella-light: #f8f9fa;
-  --text-main: #333333;
+    /* BRAND COLORS */
+    --er-primary: #C2185B;       /* Deep Raspberry/Magenta (The Donate Button Color) */
+    --er-primary-dark: #880E4F;  /* Darker Berry for hovers */
+    --er-accent: #F8BBD0;        /* Soft Blush Pink */
+    --er-bg: #FFF0F5;            /* Very faint Lavender Blush (Page Background) */
+    --er-dark: #121212;          /* True Black */
+    --er-text: #2c2c2c;          /* Dark Grey for readability */
+    --er-gray-light: #f4f4f4;    
+    
+    /* UI VARIABLES */
+    --radius-sm: 8px;
+    --radius-lg: 20px;
+    --shadow-soft: 0 10px 30px rgba(194, 24, 91, 0.08); /* Pink-tinted shadow */
+    --shadow-hover: 0 15px 35px rgba(194, 24, 91, 0.15);
+    
+    /* FONTS */
+    --font-heading: 'Playfair Display', serif; /* Elegant, Editorial */
+    --font-body: 'Montserrat', sans-serif;     /* Clean, Modern */
 }
 
+/* --- 1. BASE STYLES --- */
 body {
-  font-family: 'Montserrat', sans-serif;
-  color: var(--text-main);
-  background-color: #fdfdfd; /* Softer than pure white */
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+    font-family: var(--font-body);
+    background-color: #ffffff; /* Clean white canvas */
+    color: var(--er-text);
+    line-height: 1.7;
 }
 
-/* Typography Overrides */
-h1, h2, h3, h4, .navbar-brand {
-  font-family: 'Playfair Display', serif; /* The "Artistic" font */
-  font-weight: 700;
+/* Typography that feels "Expensive" */
+h1, h2, h3, h4, h5, .navbar-brand {
+    font-family: var(--font-heading);
+    color: var(--er-dark);
+    font-weight: 400; /* Serif fonts look better regular, not bold */
 }
 
-/* Navbar Polish */
+h1 { letter-spacing: -1px; } /* Tighter letter spacing for big headers */
+
+/* --- 2. NAVIGATION (High Contrast) --- */
 .navbar {
-  background-color: var(--ella-dark) !important;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+    background-color: var(--er-dark) !important;
+    padding: 1rem 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .nav-link {
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-size: 0.85rem;
-  transition: color 0.3s;
+    font-family: var(--font-body);
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 1.5px; /* Wide spacing for elegance */
+    color: rgba(255,255,255,0.8) !important;
+    transition: all 0.3s ease;
 }
 
-.nav-link:hover {
-  color: var(--ella-secondary) !important;
+.nav-link:hover, .nav-link.active {
+    color: var(--er-accent) !important; /* Blush pink on hover */
+    transform: translateY(-1px);
 }
 
-/* Buttons */
+/* --- 3. BUTTONS (The "Berry" Pop) --- */
+.btn {
+    border-radius: 50px; /* Pill shapes */
+    padding: 0.7rem 2rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+/* The Main Action (Donate/Submit) */
 .btn-primary {
-  background-color: var(--ella-primary);
-  border-color: var(--ella-primary);
-  padding: 0.6rem 1.5rem;
-  border-radius: 50px; /* Pill shape is modern */
-  font-weight: 600;
-  transition: all 0.3s ease;
+    background: var(--er-primary);
+    background: linear-gradient(135deg, var(--er-primary) 0%, #D81B60 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(194, 24, 91, 0.3);
 }
 
 .btn-primary:hover {
-  background-color: #9d1654;
-  transform: translateY(-2px); /* Subtle lift effect */
+    background: var(--er-primary-dark);
+    box-shadow: 0 6px 20px rgba(194, 24, 91, 0.5);
+    transform: translateY(-2px);
 }
 
-/* Cards (for Dashboard/Events) */
+/* Secondary Actions */
+.btn-warning, .btn-secondary {
+    background-color: white;
+    color: var(--er-primary);
+    border: 2px solid var(--er-primary);
+}
+
+.btn-warning:hover {
+    background-color: var(--er-primary);
+    color: white;
+}
+
+/* --- 4. CARDS (Soft & Feminine) --- */
 .card {
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Soft, expensive looking shadow */
-  transition: transform 0.3s ease;
+    border: none;
+    border-radius: var(--radius-lg);
+    background: white;
+    box-shadow: var(--shadow-soft);
+    overflow: hidden;
+    transition: all 0.4s ease;
 }
 
 .card:hover {
-  transform: translateY(-5px);
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-hover);
 }
 
+/* Specific Header Styling for Cards */
 .card-header {
-  background-color: white;
-  border-bottom: 2px solid var(--ella-light);
-  font-family: 'Playfair Display', serif;
-  font-weight: bold;
-  font-size: 1.25rem;
+    background-color: white;
+    border-bottom: 2px solid var(--er-gray-light);
+    padding: 1.5rem;
 }
 
-/* Footer */
-footer {
-  background-color: var(--ella-dark);
-  color: white;
-  padding: 3rem 0;
-  margin-top: auto;
+.card-header h1, .card-header h2, .card-header h4 {
+    color: var(--er-primary); /* Pink headers inside cards */
 }
 
-footer a {
-  color: rgba(255,255,255,0.7);
-  text-decoration: none;
-  transition: color 0.3s;
+/* --- 5. TABLES (Clean & Pink Accents) --- */
+.table {
+    --bs-table-bg: transparent;
 }
 
-footer a:hover {
-  color: var(--ella-secondary);
+.table thead th {
+    background-color: var(--er-primary);
+    color: white;
+    font-family: var(--font-body);
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    border: none;
+    padding: 1rem;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s;
+}
+
+.table tbody tr:hover {
+    background-color: var(--er-bg); /* Rows turn blush pink on hover */
+}
+
+/* --- 6. FORMS (Minimalist) --- */
+.form-control, .form-select {
+    border-radius: var(--radius-sm);
+    border: 1px solid #ddd;
+    padding: 0.8rem;
+    background-color: #fafafa;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: white;
+    border-color: var(--er-primary);
+    box-shadow: 0 0 0 4px rgba(194, 24, 91, 0.1);
+}
+
+/* --- 7. UTILITIES --- */
+/* Makes text selection Pink */
+::selection {
+    background: var(--er-accent);
+    color: var(--er-dark);
+}
+
+/* Custom badge colors */
+.badge.bg-primary { background-color: var(--er-primary) !important; }
+.badge.bg-secondary { background-color: #333 !important; }
+.text-primary { color: var(--er-primary) !important; }
+
+/* =========================================
+   FIX PACK: HERO & NAVBAR ADJUSTMENTS (No Scroll)
+   ========================================= */
+
+/* 1. FIX: Make Hero Text White */
+header h1, header p.lead {
+    color: #ffffff !important;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+}
+
+/* 2. FIX: Prevent Nav Items from Splitting */
+/* We reduce the font size slightly instead of forcing the width */
+.nav-link {
+    font-size: 0.75rem !important; /* Slightly smaller text */
+    letter-spacing: 1px !important;
+    padding-left: 0.5rem !important; /* Tighter padding */
+    padding-right: 0.5rem !important;
+}
+
+/* 3. FIX: Keep "Hi, Name" on one line */
+.navbar-text {
+    white-space: nowrap;
+    font-size: 0.85rem;
+}
+
+/* 4. PREVENT SIDEWAYS SCROLL */
+body, html {
+    overflow-x: hidden; /* This cuts off any accidental side-scroll */
+    width: 100%;
 }

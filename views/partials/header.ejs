@@ -57,15 +57,15 @@
         <% } %>
       </ul>
 
-      <div class="d-flex align-items-center gap-3">
+      <div class="d-flex align-items-center gap-2 ms-3">
         <% if (!user) { %>
-          <a href="/donate" class="btn btn-warning fw-bold text-dark rounded-pill px-4">
+          <a href="/donate" class="btn btn-warning fw-bold text-dark rounded-pill px-4" style="font-size: 0.75rem;">
             Donate Now
           </a>
           <a href="/login" class="btn btn-outline-light btn-sm">Login</a>
           <a href="/signup" class="btn btn-outline-light btn-sm">Sign Up</a>
         <% } else { %>
-          <span class="navbar-text text-light me-2">
+          <span class="navbar-text text-light">
             Hi, <%= user.firstName %>
           </span>
           <a href="/logout" class="btn btn-outline-danger btn-sm">Logout</a>
