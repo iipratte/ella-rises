@@ -283,96 +283,98 @@ app.post("/events/add", async (req, res) => {
     }
 });
 
-// --- SURVEY ROUTES (FIXED) ---
+// --- SURVEY ROUTES (CLEANED) ---
 
-// 1. Survey List Page (The Grid of Options)
-app.get("/surveys", async (req, res) => {
-    if (!req.session.username) return res.redirect('/login');
-    
-    // We try to get real data, but if it fails, we use dummy data
-    try {
-         const surveys = await knex('surveys').select('*');
-         res.render("surveys", { surveys });
-    } catch (err) {
-        console.log("Using dummy survey data...");
-        
-        // UPDATE: Only show specific Post-Event surveys
-        const dummySurveys = [
-            { 
-                surveyid: 1, 
-                surveyname: 'Leadership Workshop Feedback', 
-                surveydescription: 'Please rate your experience at the recent Leadership Summit.', 
-                surveytype: 'Post-Event' 
-            },
-            { 
-                surveyid: 2, 
-                surveyname: 'Art Class Evaluation', 
-                surveydescription: 'Feedback for the watercolor painting session.', 
-                surveytype: 'Post-Event' 
-            }
-        ];
-        res.render("surveys", { surveys: dummySurveys });
-    }
+app.get("/surveys", (req, res) => {
+    // Redirects any traffic trying to reach the plural URL to the official singular URL
+    res.redirect("/survey"); 
 });
 
-// 2. Take Survey Page (The Form)
-// app.js
-
-// 1. Show the Generic Survey Form
 app.get("/survey", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
-        // Fetch all event names to populate the dropdown
+        // Fetch event names for dropdown
         const events = await knex('events').select('eventname').orderBy('eventname');
         
-        // Render the form and pass the event list
-        res.render("takeSurvey", { events });
-
+        // RENDER 'surveys.ejs' (The form file)
+        res.render("surveys", { events });
+        
     } catch (err) {
-        console.error("Error fetching events for survey:", err);
-        // Fallback: If DB fails, provide dummy events so the page still loads
-        const dummyEvents = [
-            { eventname: 'Leadership Summit' },
-            { eventname: 'Watercolor Workshop' },
-            { eventname: 'Code Camp' }
-        ];
-        res.render("takeSurvey", { events: dummyEvents });
+        console.error("Error fetching events:", err);
+        // Fallback if DB fails
+        const dummyEvents = [{ eventname: 'General Program' }];
+        res.render("surveys", { events: dummyEvents });
     }
 });
 
-// 2. Process the Submission
+// 2. SUBMIT THE FORM
 app.post("/survey/submit", async (req, res) => {
-    // ... (This part stays mostly the same, just logging/saving the data)
-    const { eventName, satisfaction, comments } = req.body;
-    console.log(`New Survey for ${eventName}: Score ${satisfaction}`);
-    res.redirect('/thankyou');
-});
-
-// 3. Process Survey Submission
-app.post("/surveys/submit", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
-    const { firstName, lastName, email, eventName, satisfaction, comments } = req.body;
+    const { eventName, satisfaction, usefulness, comments } = req.body;
 
     try {
-        // Log the data for now (insert to DB here if you have the table)
-        console.log("Survey received for:", eventName);
-        console.log("Rating:", satisfaction);
-        
+        // Insert into DB
+        await knex('survey_responses').insert({
+            event_name: eventName,
+            satisfaction_score: satisfaction,
+            usefulness_score: usefulness, 
+            comments: comments
+        });
+
         res.redirect('/thankyou');
 
     } catch (err) {
         console.error("Survey submit error:", err);
-        res.send("Error submitting survey.");
+        // On error, redirect back to form
+        res.redirect('/survey');
+    }
+});
+
+// 3. ADMIN VIEW RESPONSES (Manager Only)
+app.get("/admin/survey-data", async (req, res) => {
+    // Strict Manager Check
+    if (!req.session.username || req.session.level !== 'M') {
+        return res.redirect('/');
+    }
+
+    try {
+        const responses = await knex('survey_responses').select('*').orderBy('response_id', 'desc'); // check your primary key name
+        res.render("surveyResponses", { responses });
+    } catch (err) {
+        console.error("Error fetching responses:", err);
+        res.render("surveyResponses", { responses: [] });
     }
 });
 
 // --- OTHER DATA ROUTES ---
 
-app.get("/milestones", (req, res) => {
-    if (!req.session.username) return res.redirect('/login');
-    res.render("milestones");
+// 1. VIEW MILESTONE MANAGEMENT PAGE (Manager Only)
+app.get("/milestones", async (req, res) => {
+    // Security: Must be logged in, must be Manager
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    try {
+        // Query to get all participants and LEFT JOIN with Milestones
+        // This ensures participants with zero milestones still appear
+        const participantsWithMilestones = await knex('participants')
+            .leftJoin('milestones', 'participants.participantid', '=', 'milestones.participantid')
+            .select(
+                'participants.participantid',
+                'participants.participantfirstname',
+                'participants.participantlastname',
+                knex.raw('COUNT(milestones.milestoneid) AS total_milestones_achieved')
+            )
+            .groupBy('participants.participantid') // Group by participant to count milestones
+            .orderBy('participants.participantlastname', 'asc');
+
+        res.render("milestones", { participants: participantsWithMilestones });
+
+    } catch (err) {
+        console.error("Error fetching milestones data:", err);
+        res.render("milestones", { participants: [] });
+    }
 });
 
 app.get("/donations", (req, res) => {
