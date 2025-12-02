@@ -40,7 +40,7 @@
                             <% } else { %>
                                 <% users.forEach(u => { %>
                                     <tr>
-                                        <td class="ps-4 text-muted"><%= u.userID %></td>
+                                        <td class="ps-4 text-muted"><%= u.id %></td>
                                         <td class="fw-bold"><%= u.firstname %> <%= u.lastname %></td>
                                         <td><%= u.email %></td>
                                         <td class="text-muted"><%= u.phone || 'N/A' %></td>
@@ -54,8 +54,9 @@
                                         </td>
                                         <td class="text-end pe-4">
                                             <div class="btn-group">
-                                                <a href="/admin/users/edit/<%= u.userID %>" class="btn btn-sm btn-outline-secondary">Edit</a>
-                                                <form action="/admin/users/delete/<%= u.userID %>" method="POST" class="d-inline" onsubmit="return confirm('Delete user <%= u.firstname %> <%= u.lastname %>?');">
+                                                <a href="/admin/users/edit/<%= u.id %>" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                                
+                                                <form action="/admin/users/delete/<%= u.id %>" method="POST" class="d-inline" onsubmit="return confirm('Delete user <%= u.firstname %> <%= u.lastname %>?');">
                                                     <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                                 </form>
                                             </div>
