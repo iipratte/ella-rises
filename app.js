@@ -108,6 +108,9 @@ app.post('/signup', async (req, res) => {
         req.session.userEmail = newUser.email;
         req.session.username = newUser.username;
  
+        req.session.firstName = newUser.firstname; 
+        req.session.level = 'U';
+        
         res.redirect('/dashboard');
  
     } catch (error) {
