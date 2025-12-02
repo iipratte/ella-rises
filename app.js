@@ -291,9 +291,15 @@ app.get("/participants", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
+        // Updated query: Left Join with Milestones to get a count for each person
         const participants = await knex('participants')
-            .select('*')
-            .orderBy('participantlastname', 'asc');
+            .leftJoin('milestones', 'participants.participantid', '=', 'milestones.participantid')
+            .select(
+                'participants.*',
+                knex.raw('COUNT(milestones.milestoneno) as milestone_count')
+            )
+            .groupBy('participants.participantid')
+            .orderBy('participants.participantlastname', 'asc');
 
         res.render("participants", { participants });
 
@@ -329,6 +335,61 @@ app.post("/participants/add", async (req, res) => {
     } catch (err) {
         console.error("Error adding participant:", err);
         res.send("Error adding participant. Check server logs.");
+    }
+});
+
+// --- NEW: EDIT PARTICIPANT (GET) ---
+app.get("/participants/edit/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/participants');
+
+    try {
+        const participant = await knex('participants').where({ participantid: req.params.id }).first();
+        if (!participant) return res.redirect('/participants');
+        
+        // You will need to create 'editParticipant.ejs' similar to 'addParticipant.ejs'
+        res.render("editParticipant", { participant });
+    } catch (err) {
+        console.error("Error finding participant:", err);
+        res.redirect('/participants');
+    }
+});
+
+// --- NEW: EDIT PARTICIPANT (POST) ---
+app.post("/participants/edit/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    const { firstName, lastName, email, role, city } = req.body;
+
+    try {
+        await knex('participants')
+            .where({ participantid: req.params.id })
+            .update({
+                participantfirstname: firstName,
+                participantlastname: lastName,
+                participantemail: email,
+                participantrole: role,
+                participantcity: city
+            });
+        
+        res.redirect('/participants');
+    } catch (err) {
+        console.error("Error updating participant:", err);
+        res.send("Error updating participant.");
+    }
+});
+
+// --- NEW: DELETE PARTICIPANT ---
+app.post("/participants/delete/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    try {
+        // Note: This might fail if the participant has related donations/milestones 
+        // unless you have ON DELETE CASCADE set up in your DB.
+        await knex('participants').where({ participantid: req.params.id }).del();
+        res.redirect('/participants');
+    } catch (err) {
+        console.error("Error deleting participant:", err);
+        res.send("Cannot delete participant. They may have related donations or milestones.");
     }
 });
 
