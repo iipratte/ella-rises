@@ -10,15 +10,16 @@
 
     <div class="container mt-5" style="max-width: 700px;">
         <div class="card shadow-lg border-0">
-            <div class="card-header bg-primary text-white py-3">
-                <h4 class="mb-0 fw-bold" style="font-family: 'DM Serif Display', serif;">Create New Event</h4>
+            <div class="card-header py-3" style="background-color: var(--er-primary);">
+                <h4 class="mb-0 fw-bold text-white" style="font-family: 'Playfair Display', serif;">Create New Event</h4>
             </div>
+            
             <div class="card-body p-4">
                 
                 <form action="/events/add" method="POST">
                     
                     <h6 class="text-muted text-uppercase fw-bold mb-3">Event Details</h6>
-                    
+                     
                     <div class="mb-3">
                         <label for="eventName" class="form-label">Event Name</label>
                         <input type="text" class="form-control" id="eventName" name="eventName" required placeholder="e.g., Annual Art Gala">
@@ -27,28 +28,28 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="eventType" class="form-label">Event Type</label>
-                            <select class="form-select" id="eventType" name="eventType">
+                             <select class="form-select" id="eventType" name="eventType">
                                 <option value="Workshop">Workshop</option>
                                 <option value="Leadership">Leadership</option>
-                                <option value="Mentoring">Mentoring</option>
+                                 <option value="Mentoring">Mentoring</option>
                                 <option value="Community">Community Service</option>
                                 <option value="Other">Other</option>
-                            </select>
+                             </select>
                         </div>
                         <div class="col-md-6">
                             <label for="eventDate" class="form-label">Date & Time</label>
-                            <input type="datetime-local" class="form-control" id="eventDate" name="eventDate" required>
+                             <input type="datetime-local" class="form-control" id="eventDate" name="eventDate" required>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="eventDescription" class="form-label">Description</label>
+                         <label for="eventDescription" class="form-label">Description</label>
                         <textarea class="form-control" id="eventDescription" name="eventDescription" rows="3" placeholder="Describe the activities..."></textarea>
                     </div>
 
                     <hr class="my-4">
 
-                    <h6 class="text-muted text-uppercase fw-bold mb-3">Logistics</h6>
+                     <h6 class="text-muted text-uppercase fw-bold mb-3">Logistics</h6>
 
                     <div class="mb-4">
                         <label for="eventLocation" class="form-label">Location / Venue</label>
@@ -58,7 +59,7 @@
                     <div class="d-flex justify-content-between">
                         <a href="/events" class="btn btn-outline-secondary">Cancel</a>
                         <button type="submit" class="btn btn-primary px-5">Save Event</button>
-                    </div>
+                     </div>
 
                 </form>
             </div>
