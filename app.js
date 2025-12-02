@@ -122,6 +122,29 @@ app.post('/login', async (req, res) => {
     }
 });
 
+// DATABASE TEST ROUTE, REMOVE ONCE RDS WORKING
+// Add this temporarily to test the connection
+app.get('/test-db', async (req, res) => {
+    try {
+      // Test connection
+      const result = await knex.raw('SELECT current_database(), current_schema()');
+      
+      // List all tables
+      const tables = await knex.raw(`
+        SELECT table_schema, table_name 
+        FROM information_schema.tables 
+        WHERE table_type = 'BASE TABLE'
+      `);
+      
+      res.json({ 
+        connection: result.rows[0],
+        tables: tables.rows 
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
 // Logout
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
