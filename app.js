@@ -290,18 +290,35 @@ app.get("/dashboard", (req, res) => {
 
 // --- PARTICIPANT ROUTES ---
 
+// --- PARTICIPANT ROUTES ---
+
 app.get("/participants", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
         const participants = await knex('participants')
-            .select('*')
-            .orderBy('participantlastname', 'asc');
+            // FIX: Cast participantid to TEXT to match the milestones table type
+            .leftJoin('milestones', knex.raw('CAST(participants.participantid AS TEXT)'), '=', 'milestones.participantid')
+            .select(
+                'participants.participantid',
+                'participants.participantfirstname',
+                'participants.participantlastname',
+                'participants.participantemail',
+                'participants.participantrole',
+                'participants.participantcity',
+                // NEW FIELDS ADDED HERE:
+                'participants.participantschooloremployer',
+                'participants.participantfieldofinterest',
+                knex.raw('COUNT(milestones.milestoneno) as milestone_count')
+            )
+            .groupBy('participants.participantid')
+            .orderBy('participants.participantlastname', 'asc');
 
         res.render("participants", { participants });
 
     } catch (err) {
-        console.error('Error fetching participants:', err);
+        // IMPROVEMENT: Log the ACTUAL error so you can see it in your terminal
+        console.error('Detailed Error fetching participants:',Vrerr);
         res.render("participants", { participants: [] });
     }
 });
@@ -332,6 +349,61 @@ app.post("/participants/add", async (req, res) => {
     } catch (err) {
         console.error("Error adding participant:", err);
         res.send("Error adding participant. Check server logs.");
+    }
+});
+
+// --- NEW: EDIT PARTICIPANT (GET) ---
+app.get("/participants/edit/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/participants');
+
+    try {
+        const participant = await knex('participants').where({ participantid: req.params.id }).first();
+        if (!participant) return res.redirect('/participants');
+        
+        // You will need to create 'editParticipant.ejs' similar to 'addParticipant.ejs'
+        res.render("editParticipant", { participant });
+    } catch (err) {
+        console.error("Error finding participant:", err);
+        res.redirect('/participants');
+    }
+});
+
+// --- NEW: EDIT PARTICIPANT (POST) ---
+app.post("/participants/edit/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    const { firstName, lastName, email, role, city } = req.body;
+
+    try {
+        await knex('participants')
+            .where({ participantid: req.params.id })
+            .update({
+                participantfirstname: firstName,
+                participantlastname: lastName,
+                participantemail: email,
+                participantrole: role,
+                participantcity: city
+            });
+        
+        res.redirect('/participants');
+    } catch (err) {
+        console.error("Error updating participant:", err);
+        res.send("Error updating participant.");
+    }
+});
+
+// --- NEW: DELETE PARTICIPANT ---
+app.post("/participants/delete/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    try {
+        // Note: This might fail if the participant has related donations/milestones 
+        // unless you have ON DELETE CASCADE set up in your DB.
+        await knex('participants').where({ participantid: req.params.id }).del();
+        res.redirect('/participants');
+    } catch (err) {
+        console.error("Error deleting participant:", err);
+        res.send("Cannot delete participant. They may have related donations or milestones.");
     }
 });
 
@@ -467,22 +539,25 @@ app.get("/admin/survey-data", async (req, res) => {
 
 // 1. VIEW MILESTONE MANAGEMENT PAGE (Manager Only)
 app.get("/milestones", async (req, res) => {
-    // Security: Must be logged in, must be Manager
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
     try {
-        // Query to get all participants and LEFT JOIN with Milestones
-        // This ensures participants with zero milestones still appear
-        const participantsWithMilestones = await knex('participants')
-            .leftJoin('milestones', 'participants.participantid', '=', 'milestones.participantid')
-            .select(
-                'participants.participantid',
-                'participants.participantfirstname',
-                'participants.participantlastname',
-                knex.raw('COUNT(milestones.milestoneid) AS total_milestones_achieved')
-            )
-            .groupBy('participants.participantid') // Group by participant to count milestones
-            .orderBy('participants.participantlastname', 'asc');
+        // 1. Fetch all participants
+        const participants = await knex('participants')
+            .orderBy('participantlastname', 'asc');
+
+        // 2. Fetch all milestones (using correct column names from your image)
+        const milestones = await knex('milestones')
+            .select('milestoneno', 'participantid', 'milestonetitle', 'milestonedate', 'milestonenotes')
+            .orderBy('milestonedate', 'desc');
+
+        // 3. Combine them: Attach milestones to each participant object
+        const participantsWithMilestones = participants.map(p => {
+            return {
+                ...p,
+                milestones: milestones.filter(m => m.participantid === p.participantid)
+            };
+        });
 
         res.render("milestones", { participants: participantsWithMilestones });
 
@@ -501,13 +576,12 @@ app.get("/milestones/view/:id", async (req, res) => {
     const pid = req.params.id;
 
     try {
-        // A. Get the Participant Info
         const participant = await knex('participants').where({ participantid: pid }).first();
         
-        // B. Get their Milestones
+        // Updated to use 'milestonedate' and 'milestoneno'
         const milestones = await knex('milestones')
             .where({ participantid: pid })
-            .orderBy('dateachieved', 'desc');
+            .orderBy('milestonedate', 'desc');
 
         res.render("milestoneDetails", { participant, milestones });
 
@@ -522,8 +596,6 @@ app.get("/milestones/add/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
     
     const pid = req.params.id;
-    
-    // We need the name to show on the form header ("Adding for Maria...")
     const participant = await knex('participants').where({ participantid: pid }).first();
     
     res.render("addMilestone", { participant });
@@ -534,37 +606,45 @@ app.post("/milestones/add/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
     const pid = req.params.id;
-    const { milestoneName, dateAchieved, notes } = req.body;
+    // Note: 'milestoneno' is likely an integer. 
+    // If it's not auto-incrementing in DB, you might need to calculate the next number here.
+    // Assuming DB handles it or you input it manually. 
+    const { milestoneTitle, milestoneDate, notes } = req.body;
 
     try {
         await knex('milestones').insert({
             participantid: pid,
-            milestonename: milestoneName,
-            dateachieved: dateAchieved,
-            milestonenotes: notes
+            milestonetitle: milestoneTitle, // Corrected column
+            milestonedate: milestoneDate,   // Corrected column
+            milestonenotes: notes          // Corrected column
         });
 
-        // Redirect back to that person's detail page
         res.redirect(`/milestones/view/${pid}`);
 
     } catch (err) {
         console.error("Error creating milestone:", err);
-        res.send("Error adding milestone.");
+        res.send("Error adding milestone. Check DB constraints.");
     }
 });
 
-// 5. DELETE MILESTONE
-app.post("/milestones/delete/:id", async (req, res) => {
+// 5. DELETE MILESTONE 
+// NOTE: Because your table uses a Composite PK (milestoneno + participantid), 
+// we need both to delete safely.
+app.post("/milestones/delete/:pid/:mno", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
     
-    const mid = req.params.id;
-    // We need the participant ID to redirect back correctly
-    const milestone = await knex('milestones').where({ milestoneid: mid }).first();
-    const pid = milestone.participantid;
+    const { pid, mno } = req.params;
 
-    await knex('milestones').where({ milestoneid: mid }).del();
-    
-    res.redirect(`/milestones/view/${pid}`);
+    try {
+        await knex('milestones')
+            .where({ participantid: pid, milestoneno: mno }) // Match both keys
+            .del();
+        
+        res.redirect(`/milestones/view/${pid}`);
+    } catch(err) {
+        console.error("Delete error", err);
+        res.redirect('/milestones');
+    }
 });
 
 
