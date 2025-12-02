@@ -595,6 +595,7 @@ app.get("/admin/users", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
     try {
+        // Ensure we order by 'id', not 'userID'
         const users = await knex('users').select('*').orderBy('id');
         res.render("userMaintenance", { users });
     } catch (err) {
@@ -617,7 +618,7 @@ app.post("/admin/users/add", async (req, res) => {
 
     try {
         await knex('users').insert({
-            username,
+            username: username.toLowerCase(),
             password, 
             level // 'M' or 'U'
         });
@@ -628,12 +629,13 @@ app.post("/admin/users/add", async (req, res) => {
     }
 });
 
-// 4. DISPLAY EDIT USER FORM
-app.get("/admin/users/edit/:userID", async (req, res) => {
+// 4. DISPLAY EDIT USER FORM (Changed :userID to :id)
+app.get("/admin/users/edit/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
     try {
-        const userToEdit = await knex('users').where({ userID: req.params.userID }).first();
+        // Changed .where({ userID: ... }) to .where({ id: ... })
+        const userToEdit = await knex('users').where({ id: req.params.id }).first();
         if (!userToEdit) {
             return res.redirect('/admin/users');
         }
@@ -644,8 +646,8 @@ app.get("/admin/users/edit/:userID", async (req, res) => {
     }
 });
 
-// 5. PROCESS EDIT USER
-app.post("/admin/users/edit/:userID", async (req, res) => {
+// 5. PROCESS EDIT USER (Changed :userID to :id)
+app.post("/admin/users/edit/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
     const { firstname, lastname, email, phone, city, state, zip, password, level } = req.body;
@@ -667,7 +669,8 @@ app.post("/admin/users/edit/:userID", async (req, res) => {
             updateData.password = password;
         }
 
-        await knex('users').where({ userID: req.params.userID }).update(updateData);
+        // Changed .where({ userID: ... }) to .where({ id: ... })
+        await knex('users').where({ id: req.params.id }).update(updateData);
         res.redirect('/admin/users');
     } catch (err) {
         console.error("Error updating user:", err);
@@ -675,17 +678,19 @@ app.post("/admin/users/edit/:userID", async (req, res) => {
     }
 });
 
-// 6. DELETE USER
-app.post("/admin/users/delete/:userID", async (req, res) => {
+// 6. DELETE USER (Changed :userID to :id)
+app.post("/admin/users/delete/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
     try {
         // Prevent deleting yourself!
-        if (req.session.userID == req.params.userID) {
+        // Changed req.params.userID to req.params.id
+        if (req.session.userId == req.params.id) {
             return res.send("You cannot delete your own account while logged in.");
         }
 
-        await knex('users').where({ userID: req.params.userID }).del();
+        // Changed .where({ userID: ... }) to .where({ id: ... })
+        await knex('users').where({ id: req.params.id }).del();
         res.redirect('/admin/users');
     } catch (err) {
         console.error("Error deleting user:", err);
