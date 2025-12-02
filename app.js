@@ -25,7 +25,7 @@ const knex = require("knex")({
     password: process.env.RDS_PASSWORD,
     database: process.env.RDS_DB_NAME,
     port: process.env.RDS_PORT,
-    ssl: process.env.DB_SSL ? { rejectUnauthorized: false } : false// Required for AWS RDS
+    ssl: { rejectUnauthorized: false, require: true } // Force SSL
   }
 });
 
