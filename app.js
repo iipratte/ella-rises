@@ -102,6 +102,39 @@ app.post('/donate', async (req, res) => {
     }
 });
 
+// --- ADMIN DONATION HISTORY ---
+
+app.get("/admin/donations", async (req, res) => {
+    // 1. Security: Strict Manager Check
+    if (!req.session.username || req.session.level !== 'M') {
+        return res.redirect('/');
+    }
+
+    try {
+        // 2. Fetch Donations with Donor Names
+        // We join 'donations' with 'participants' so we see names, not just IDs
+        const donations = await knex('donations')
+            .join('participants', 'donations.participantid', '=', 'participants.participantid')
+            .select(
+                'donations.donationid',
+                'donations.donationamount',
+                'donations.donationdate',
+                'participants.participantfirstname',
+                'participants.participantlastname',
+                'participants.participantemail'
+            )
+            .orderBy('donations.donationdate', 'desc'); // Newest first
+
+        // 3. Render the specific history view you created
+        res.render("donationHistory", { donations });
+
+    } catch (err) {
+        console.error("Error fetching donation history:", err);
+        // If the table is missing, show empty list so it doesn't crash
+        res.render("donationHistory", { donations: [] });
+    }
+});
+
 // 3. Thank You Page
 app.get("/thankyou", (req, res) => {
     res.render("thankyou");
