@@ -156,6 +156,11 @@ app.get("/events", (req, res) => {
     res.render("events");
 });
 
+app.get("/donate", (req, res) => {
+    if (!req.session.username) return res.redirect('/login');
+    res.render("donate");
+});
+
 app.get("/surveys", (req, res) => {
     if (!req.session.username) return res.redirect('/login');
     res.render("surveys");
