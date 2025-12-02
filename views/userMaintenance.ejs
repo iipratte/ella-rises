@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>User Maintenance - Ella Rises</title>
+    <title>Edit User - Ella Rises</title>
     <%- include('partials/head') %>
 </head>
 <body class="bg-light">
@@ -9,57 +9,84 @@
     <%- include('partials/header') %>
 
     <div class="container mt-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="fw-bold text-primary" style="font-family: 'DM Serif Display', serif;">User Management</h1>
-                <p class="text-muted">Manage administrator and staff access to the system.</p>
-            </div>
-            <a href="/admin/users/add" class="btn btn-primary shadow-sm d-inline-flex align-items-center">
-                <i class="bi bi-person-plus-fill me-2"></i> Create New User
-            </a>
-        </div>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow border-0">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Edit User</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form action="/admin/users/edit/<%= userToEdit.userID %>" method="POST">
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="firstname" class="form-label">First Name *</label>
+                                    <input type="text" class="form-control" id="firstname" name="firstname" 
+                                           value="<%= userToEdit.firstname %>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="lastname" class="form-label">Last Name *</label>
+                                    <input type="text" class="form-control" id="lastname" name="lastname" 
+                                           value="<%= userToEdit.lastname %>" required>
+                                </div>
+                            </div>
 
-        <div class="card shadow border-0">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th class="ps-4">ID</th>
-                                <th>Username</th>
-                                <th>Password</th>
-                                <th>Access Level</th>
-                                <th class="text-end pe-4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% if (users.length === 0) { %>
-                                <tr><td colspan="5" class="text-center py-5">No users found.</td></tr>
-                            <% } else { %>
-                                <% users.forEach(u => { %>
-                                    <tr>
-                                        <td class="ps-4 text-muted"><%= u.id %></td>
-                                        <td class="fw-bold"><%= u.username %></td>
-                                        <td class="text-muted">••••••</td> <td>
-                                            <% if (u.level === 'M') { %>
-                                                <span class="badge bg-danger">Manager</span>
-                                            <% } else { %>
-                                                <span class="badge bg-secondary">User</span>
-                                            <% } %>
-                                        </td>
-                                        <td class="text-end pe-4">
-                                            <div class="btn-group">
-                                                <a href="/admin/users/edit/<%= u.id %>" class="btn btn-sm btn-outline-secondary">Edit</a>
-                                                <form action="/admin/users/delete/<%= u.id %>" method="POST" class="d-inline" onsubmit="return confirm('Delete user <%= u.username %>?');">
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <% }) %>
-                            <% } %>
-                        </tbody>
-                    </table>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="<%= userToEdit.email %>" required>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="phone" class="form-label">Phone</label>
+                                    <input type="text" class="form-control" id="phone" name="phone" 
+                                           value="<%= userToEdit.phone || '' %>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="level" class="form-label">Access Level *</label>
+                                    <select class="form-select" id="level" name="level" required>
+                                        <option value="U" <%= userToEdit.level === 'U' ? 'selected' : '' %>>User</option>
+                                        <option value="M" <%= userToEdit.level === 'M' ? 'selected' : '' %>>Manager</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="city" class="form-label">City</label>
+                                    <input type="text" class="form-control" id="city" name="city" 
+                                           value="<%= userToEdit.city || '' %>">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="state" class="form-label">State</label>
+                                    <input type="text" class="form-control" id="state" name="state" 
+                                           value="<%= userToEdit.state || '' %>" maxlength="2">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="zip" class="form-label">Zip Code</label>
+                                    <input type="text" class="form-control" id="zip" name="zip" 
+                                           value="<%= userToEdit.zip || '' %>">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       placeholder="Leave blank to keep current password">
+                                <small class="text-muted">Only fill this in if you want to change the password</small>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4">
+                                <a href="/admin/users" class="btn btn-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i> Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i> Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
