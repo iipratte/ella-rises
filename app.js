@@ -290,60 +290,64 @@ app.get("/dashboard", (req, res) => {
 
 // --- PARTICIPANT ROUTES ---
 
-// --- PARTICIPANT ROUTES ---
-
 app.get("/participants", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
+        // 1. Fetch participants (Corrected Schema)
         const participants = await knex('participants')
-            // FIX: Cast participantid to TEXT to match the milestones table type
-            .leftJoin('milestones', knex.raw('CAST(participants.participantid AS TEXT)'), '=', 'milestones.participantid')
             .select(
-                'participants.participantid',
-                'participants.participantfirstname',
-                'participants.participantlastname',
-                'participants.participantemail',
-                'participants.participantrole',
-                'participants.participantcity',
-                // NEW FIELDS ADDED HERE:
-                'participants.participantschooloremployer',
-                'participants.participantfieldofinterest',
-                knex.raw('COUNT(milestones.milestoneno) as milestone_count')
+                'participantid',
+                'username',
+                'participantschooloremployer',
+                'participantfieldofinterest'
             )
-            .groupBy('participants.participantid')
-            .orderBy('participants.participantlastname', 'asc');
+            .orderBy('username', 'asc'); // Sorted by username since lastname doesn't exist
+
+        // 2. Fetch milestone counts separately
+        const milestoneCounts = await knex('milestones')
+            .select('participantid')
+            .count('milestoneno as count')
+            .groupBy('participantid');
+
+        // 3. Merge counts in JavaScript (Avoids Type Mismatch)
+        participants.forEach(p => {
+            // loose comparison (==) handles int vs string ID mismatch
+            const match = milestoneCounts.find(m => m.participantid == p.participantid);
+            p.milestone_count = match ? match.count : 0;
+        });
 
         res.render("participants", { participants });
 
     } catch (err) {
-        // IMPROVEMENT: Log the ACTUAL error so you can see it in your terminal
-        console.error('Detailed Error fetching participants:',Vrerr);
+        console.error("Error fetching participants:", err);
         res.render("participants", { participants: [] });
     }
 });
 
+// GET Add Form
 app.get("/participants/add", (req, res) => {
     if (!req.session.username || req.session.level !== 'M') {
         return res.redirect('/participants');
     }
+    // Note: You may need to update 'addParticipant.ejs' to match these new fields later
     res.render("addParticipant");
 });
 
+// POST Add Form (Updated for new schema)
 app.post("/participants/add", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') {
         return res.redirect('/');
     }
 
-    const { firstName, lastName, email, role, city } = req.body;
+    // Expecting these fields from your form now
+    const { username, schoolOrEmployer, fieldOfInterest } = req.body;
 
     try {
         await knex('participants').insert({
-            participantfirstname: firstName,
-            participantlastname: lastName,
-            participantemail: email,
-            participantrole: role,
-            participantcity: city
+            username: username,
+            participantschooloremployer: schoolOrEmployer,
+            participantfieldofinterest: fieldOfInterest
         });
         res.redirect('/participants');
     } catch (err) {
@@ -352,7 +356,7 @@ app.post("/participants/add", async (req, res) => {
     }
 });
 
-// --- NEW: EDIT PARTICIPANT (GET) ---
+// GET Edit Form
 app.get("/participants/edit/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/participants');
 
@@ -360,7 +364,7 @@ app.get("/participants/edit/:id", async (req, res) => {
         const participant = await knex('participants').where({ participantid: req.params.id }).first();
         if (!participant) return res.redirect('/participants');
         
-        // You will need to create 'editParticipant.ejs' similar to 'addParticipant.ejs'
+        // Ensure you create/update 'editParticipant.ejs' to have inputs for username, school, interest
         res.render("editParticipant", { participant });
     } catch (err) {
         console.error("Error finding participant:", err);
@@ -368,21 +372,19 @@ app.get("/participants/edit/:id", async (req, res) => {
     }
 });
 
-// --- NEW: EDIT PARTICIPANT (POST) ---
+// POST Edit Form (Updated for new schema)
 app.post("/participants/edit/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
-    const { firstName, lastName, email, role, city } = req.body;
+    const { username, schoolOrEmployer, fieldOfInterest } = req.body;
 
     try {
         await knex('participants')
             .where({ participantid: req.params.id })
             .update({
-                participantfirstname: firstName,
-                participantlastname: lastName,
-                participantemail: email,
-                participantrole: role,
-                participantcity: city
+                username: username,
+                participantschooloremployer: schoolOrEmployer,
+                participantfieldofinterest: fieldOfInterest
             });
         
         res.redirect('/participants');
@@ -392,18 +394,16 @@ app.post("/participants/edit/:id", async (req, res) => {
     }
 });
 
-// --- NEW: DELETE PARTICIPANT ---
+// DELETE Participant
 app.post("/participants/delete/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
     try {
-        // Note: This might fail if the participant has related donations/milestones 
-        // unless you have ON DELETE CASCADE set up in your DB.
         await knex('participants').where({ participantid: req.params.id }).del();
         res.redirect('/participants');
     } catch (err) {
         console.error("Error deleting participant:", err);
-        res.send("Cannot delete participant. They may have related donations or milestones.");
+        res.send("Cannot delete participant (likely has related records).");
     }
 });
 
