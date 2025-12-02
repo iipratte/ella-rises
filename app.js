@@ -98,9 +98,7 @@ app.post('/signup', async (req, res) => {
                 phone,
                 city,
                 state,
-                zip,
-                created_at: knex.fn.now(),
-                updated_at: knex.fn.now()
+                zip
             })
             .returning('*');
  
