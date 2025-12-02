@@ -452,10 +452,6 @@ app.post("/milestones/delete/:id", async (req, res) => {
     res.redirect(`/milestones/view/${pid}`);
 });
 
-// app.get("/donations", (req, res) => {
-//     if (!req.session.username) return res.redirect('/login');
-//     res.render("donations");
-// });
 
 app.get("/donations", (req, res) => {
     // Check if user is logged in
@@ -480,9 +476,94 @@ app.get("/admin", (req, res) => {
     res.render("admin");
 });
 
-app.get("/admin/users", (req, res) => {
-    if (req.session.level !== 'M') return res.redirect('/');
-    res.render("userMaintenance");
+// --- USER MAINTENANCE ROUTES (Admin Only) ---
+
+// 1. LIST ALL USERS
+app.get("/admin/users", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    try {
+        const users = await knex('users').select('*').orderBy('id');
+        res.render("userMaintenance", { users });
+    } catch (err) {
+        console.error("Error fetching users:", err);
+        res.render("userMaintenance", { users: [] });
+    }
+});
+
+// 2. SHOW ADD USER FORM
+app.get("/admin/users/add", (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    res.render("addUser");
+});
+
+// 3. PROCESS ADD USER
+app.post("/admin/users/add", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    const { username, password, level } = req.body;
+
+    try {
+        await knex('users').insert({
+            username,
+            password, 
+            level // 'M' or 'U'
+        });
+        res.redirect('/admin/users');
+    } catch (err) {
+        console.error("Error adding user:", err);
+        res.send("Error adding user.");
+    }
+});
+
+// 4. SHOW EDIT USER FORM
+app.get("/admin/users/edit/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    try {
+        const userToEdit = await knex('users').where({ id: req.params.id }).first();
+        res.render("editUser", { userToEdit });
+    } catch (err) {
+        console.error("Error finding user:", err);
+        res.redirect('/admin/users');
+    }
+});
+
+// 5. PROCESS EDIT USER
+app.post("/admin/users/edit/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    const { username, password, level } = req.body;
+
+    try {
+        await knex('users').where({ id: req.params.id }).update({
+            username,
+            password,
+            level
+        });
+        res.redirect('/admin/users');
+    } catch (err) {
+        console.error("Error updating user:", err);
+        res.send("Error updating user.");
+    }
+});
+
+// 6. DELETE USER
+app.post("/admin/users/delete/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    try {
+        // Prevent deleting yourself!
+        if (req.session.userId == req.params.id) {
+            return res.send("You cannot delete your own account while logged in.");
+        }
+
+        await knex('users').where({ id: req.params.id }).del();
+        res.redirect('/admin/users');
+    } catch (err) {
+        console.error("Error deleting user:", err);
+        res.redirect('/admin/users');
+    }
 });
 
 app.get("/teapot", (req, res) => {
