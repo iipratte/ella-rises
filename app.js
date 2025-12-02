@@ -287,15 +287,25 @@ app.get("/dashboard", (req, res) => {
 
 // --- PARTICIPANT ROUTES ---
 
+// --- PARTICIPANT ROUTES ---
+
 app.get("/participants", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
-        // Updated query: Left Join with Milestones to get a count for each person
         const participants = await knex('participants')
-            .leftJoin('milestones', 'participants.participantid', '=', 'milestones.participantid')
+            // FIX: Cast participantid to TEXT to match the milestones table type
+            .leftJoin('milestones', knex.raw('CAST(participants.participantid AS TEXT)'), '=', 'milestones.participantid')
             .select(
-                'participants.*',
+                'participants.participantid',
+                'participants.participantfirstname',
+                'participants.participantlastname',
+                'participants.participantemail',
+                'participants.participantrole',
+                'participants.participantcity',
+                // NEW FIELDS ADDED HERE:
+                'participants.participantschooloremployer',
+                'participants.participantfieldofinterest',
                 knex.raw('COUNT(milestones.milestoneno) as milestone_count')
             )
             .groupBy('participants.participantid')
@@ -304,7 +314,8 @@ app.get("/participants", async (req, res) => {
         res.render("participants", { participants });
 
     } catch (err) {
-        console.error('Error fetching participants:', err);
+        // IMPROVEMENT: Log the ACTUAL error so you can see it in your terminal
+        console.error('Detailed Error fetching participants:',Vrerr);
         res.render("participants", { participants: [] });
     }
 });
