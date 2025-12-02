@@ -1,4 +1,3 @@
-// app.js
 require('dotenv').config();
 const express = require("express");
 const session = require("express-session");
@@ -38,12 +37,10 @@ app.use(session({
 }));
 
 // --- 4. GLOBAL USER MIDDLEWARE ---
-// Makes 'user' available to all EJS files & fixes the header crash
 app.use((req, res, next) => {
     if (req.session && req.session.username) {
         res.locals.user = {
             username: req.session.username,
-            // Map DB 'level' ('M') to the Header's expected 'role' ('Manager')
             role: req.session.level === 'M' ? 'Manager' : 'User'
         };
     } else {
@@ -63,37 +60,77 @@ app.get("/signup", (req, res) => {
     res.render("signup");
 });
 
-// Login Page
+// --- DONATION ROUTES ---
+
+// 1. Show the Donation Form
+app.get("/donate", (req, res) => {
+    res.render("donations");
+});
+
+// 2. Process the Donation Form
+app.post('/donate', async (req, res) => {
+    const { firstName, lastName, email, amount } = req.body;
+
+    try {
+        const participant = await knex('participants').where({ ParticipantEmail: email }).first();
+        let participantId;
+
+        if (!participant) {
+            const result = await knex('participants').insert({
+                ParticipantFirstName: firstName,
+                ParticipantLastName: lastName,
+                ParticipantEmail: email,
+                ParticipantRole: 'Donor'
+            }).returning('ParticipantID');
+            
+            participantId = result[0].ParticipantID || result[0]; 
+        } else {
+            participantId = participant.ParticipantID;
+        }
+        
+        await knex('donations').insert({
+            ParticipantID: participantId,
+            DonationDate: new Date(),
+            DonationAmount: amount
+        });
+
+        res.redirect('/thankyou');
+
+    } catch (err) {
+        console.error('Donation processing error:', err);
+        res.render('donations', { error: 'Error processing donation. Please try again.' });
+    }
+});
+
+// 3. Thank You Page
+app.get("/thankyou", (req, res) => {
+    res.render("thankyou");
+});
+
+// --- LOGIN ROUTES ---
+
 app.get("/login", (req, res) => {
     res.render("login");
 });
 
-// LOGIN LOGIC (Backdoor + Real DB)
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
-    // --- 🚨 START BACKDOOR (DELETE BEFORE SUBMISSION) 🚨 ---
-    
-    // 1. MANAGER: Goes to Dashboard
+    // --- 🚨 BACKDOOR (DELETE BEFORE SUBMISSION) 🚨 ---
     if (username === 'admin' && password === 'test') {
-        console.log("Logging in as Hardcoded Manager...");
         req.session.userId = 888;
         req.session.username = 'Admin';
         req.session.level = 'M'; 
-        return res.redirect('/dashboard'); // ✅ Manager goes to Dashboard
+        return res.redirect('/dashboard'); 
     }
-
-    // 2. COMMON USER: Goes to Home Page
     if (username === 'user' && password === 'test') {
-        console.log("Logging in as Hardcoded Common User...");
         req.session.userId = 999;
         req.session.username = 'Visitor';
         req.session.level = 'U'; 
-        return res.redirect('/'); // ✅ User goes to Home (NOT Dashboard)
+        return res.redirect('/'); 
     }
     // --- 🚨 END BACKDOOR 🚨 ---
 
-    // REAL DATABASE LOGIC
     try {
         if (!username || !password) {
             return res.render('login', { error: 'Username and password are required.' });
@@ -109,7 +146,6 @@ app.post('/login', async (req, res) => {
         req.session.username = user.username;
         req.session.level = user.level;
 
-        // --- SPLIT TRAFFIC BASED ON ROLE ---
         if (req.session.level === 'M') {
             return res.redirect('/dashboard');
         } else {
@@ -122,30 +158,6 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// DATABASE TEST ROUTE, REMOVE ONCE RDS WORKING
-// Add this temporarily to test the connection
-app.get('/test-db', async (req, res) => {
-    try {
-      // Test connection
-      const result = await knex.raw('SELECT current_database(), current_schema()');
-      
-      // List all tables
-      const tables = await knex.raw(`
-        SELECT table_schema, table_name 
-        FROM information_schema.tables 
-        WHERE table_type = 'BASE TABLE'
-      `);
-      
-      res.json({ 
-        connection: result.rows[0],
-        tables: tables.rows 
-      });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-// Logout
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) console.log(err);
@@ -155,43 +167,289 @@ app.get('/logout', (req, res) => {
 
 // --- PROTECTED DATA ROUTES ---
 
-// 1. DASHBOARD (STRICTLY MANAGER ONLY)
 app.get("/dashboard", (req, res) => {
-    // Must be logged in
     if (!req.session.username) return res.redirect('/login');
-    
-    // Must be a Manager
-    if (req.session.level !== 'M') {
-        return res.redirect('/'); // Kick common users back to Home
-    }
-    
+    if (req.session.level !== 'M') return res.redirect('/');
     res.render("dashboard");
 });
 
-// 2. DATA PAGES (Visible to all logged-in users)
-app.get("/participants", (req, res) => {
+// --- PARTICIPANT ROUTES ---
+
+app.get("/participants", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
-    res.render("participants");
+
+    try {
+        const participants = await knex('participants')
+            .select('*')
+            .orderBy('participantlastname', 'asc');
+
+        res.render("participants", { participants });
+
+    } catch (err) {
+        console.error('Error fetching participants:', err);
+        res.render("participants", { participants: [] });
+    }
 });
 
-app.get("/events", (req, res) => {
-    if (!req.session.username) return res.redirect('/login');
-    res.render("events");
+app.get("/participants/add", (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') {
+        return res.redirect('/participants');
+    }
+    res.render("addParticipant");
 });
 
-app.get("/donate", (req, res) => {
-    if (!req.session.username) return res.redirect('/login');
-    res.render("donate");
+app.post("/participants/add", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') {
+        return res.redirect('/');
+    }
+
+    const { firstName, lastName, email, role, city } = req.body;
+
+    try {
+        await knex('participants').insert({
+            participantfirstname: firstName,
+            participantlastname: lastName,
+            participantemail: email,
+            participantrole: role,
+            participantcity: city
+        });
+        res.redirect('/participants');
+    } catch (err) {
+        console.error("Error adding participant:", err);
+        res.send("Error adding participant. Check server logs.");
+    }
 });
+
+// --- EVENT ROUTES ---
+
+app.get("/events", async (req, res) => {
+    if (!req.session.username) return res.redirect('/login');
+
+    try {
+        const events = await knex('event_schedule')
+            .join('events', 'event_schedule.eventid', '=', 'events.eventid')
+            .select(
+                'event_schedule.scheduleid',
+                'events.eventname',
+                'events.eventtype',
+                'events.eventdescription',
+                'event_schedule.eventdatetimestart',
+                'event_schedule.eventlocation'
+            )
+            .orderBy('event_schedule.eventdatetimestart', 'asc');
+
+        res.render("events", { events });
+
+    } catch (err) {
+        console.error('Error fetching events:', err);
+        res.render("events", { events: [] }); 
+    }
+});
+
+app.get("/events/add", (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') {
+        return res.redirect('/events');
+    }
+    res.render("addEvent");
+});
+
+app.post("/events/add", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') {
+        return res.redirect('/');
+    }
+
+    const { eventName, eventType, eventDescription, eventDate, eventLocation } = req.body;
+
+    try {
+        const result = await knex('events').insert({
+            eventname: eventName,
+            eventtype: eventType,
+            eventdescription: eventDescription
+        }).returning('eventid');
+
+        const newEventId = result[0].eventid || result[0];
+
+        await knex('event_schedule').insert({
+            eventid: newEventId,
+            eventdatetimestart: eventDate,
+            eventlocation: eventLocation,
+            eventdatetimeend: eventDate 
+        });
+
+        res.redirect('/events');
+    } catch (err) {
+        console.error("Error adding event:", err);
+        res.send("Error adding event to database.");
+    }
+});
+
+// --- SURVEY ROUTES (CLEANED) ---
 
 app.get("/surveys", (req, res) => {
-    if (!req.session.username) return res.redirect('/login');
-    res.render("surveys");
+    // Redirects any traffic trying to reach the plural URL to the official singular URL
+    res.redirect("/survey"); 
 });
 
-app.get("/milestones", (req, res) => {
+app.get("/survey", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
-    res.render("milestones");
+
+    try {
+        // Fetch event names for dropdown
+        const events = await knex('events').select('eventname').orderBy('eventname');
+        
+        // RENDER 'surveys.ejs' (The form file)
+        res.render("surveys", { events });
+        
+    } catch (err) {
+        console.error("Error fetching events:", err);
+        // Fallback if DB fails
+        const dummyEvents = [{ eventname: 'General Program' }];
+        res.render("surveys", { events: dummyEvents });
+    }
+});
+
+// 2. SUBMIT THE FORM
+app.post("/survey/submit", async (req, res) => {
+    if (!req.session.username) return res.redirect('/login');
+
+    const { eventName, satisfaction, usefulness, comments } = req.body;
+
+    try {
+        // Insert into DB
+        await knex('survey_responses').insert({
+            event_name: eventName,
+            satisfaction_score: satisfaction,
+            usefulness_score: usefulness, 
+            comments: comments
+        });
+
+        res.redirect('/thankyou');
+
+    } catch (err) {
+        console.error("Survey submit error:", err);
+        // On error, redirect back to form
+        res.redirect('/survey');
+    }
+});
+
+// 3. ADMIN VIEW RESPONSES (Manager Only)
+app.get("/admin/survey-data", async (req, res) => {
+    // Strict Manager Check
+    if (!req.session.username || req.session.level !== 'M') {
+        return res.redirect('/');
+    }
+
+    try {
+        const responses = await knex('survey_responses').select('*').orderBy('response_id', 'desc'); // check your primary key name
+        res.render("surveyResponses", { responses });
+    } catch (err) {
+        console.error("Error fetching responses:", err);
+        res.render("surveyResponses", { responses: [] });
+    }
+});
+
+// --- OTHER DATA ROUTES ---
+
+// 1. VIEW MILESTONE MANAGEMENT PAGE (Manager Only)
+app.get("/milestones", async (req, res) => {
+    // Security: Must be logged in, must be Manager
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    try {
+        // Query to get all participants and LEFT JOIN with Milestones
+        // This ensures participants with zero milestones still appear
+        const participantsWithMilestones = await knex('participants')
+            .leftJoin('milestones', 'participants.participantid', '=', 'milestones.participantid')
+            .select(
+                'participants.participantid',
+                'participants.participantfirstname',
+                'participants.participantlastname',
+                knex.raw('COUNT(milestones.milestoneid) AS total_milestones_achieved')
+            )
+            .groupBy('participants.participantid') // Group by participant to count milestones
+            .orderBy('participants.participantlastname', 'asc');
+
+        res.render("milestones", { participants: participantsWithMilestones });
+
+    } catch (err) {
+        console.error("Error fetching milestones data:", err);
+        res.render("milestones", { participants: [] });
+    }
+});
+
+// --- MILESTONE DETAIL & MAINTENANCE ROUTES ---
+
+// 2. VIEW DETAILS (Specific Participant's History)
+app.get("/milestones/view/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    const pid = req.params.id;
+
+    try {
+        // A. Get the Participant Info
+        const participant = await knex('participants').where({ participantid: pid }).first();
+        
+        // B. Get their Milestones
+        const milestones = await knex('milestones')
+            .where({ participantid: pid })
+            .orderBy('dateachieved', 'desc');
+
+        res.render("milestoneDetails", { participant, milestones });
+
+    } catch (err) {
+        console.error("Error fetching detail:", err);
+        res.redirect('/milestones');
+    }
+});
+
+// 3. SHOW ADD FORM
+app.get("/milestones/add/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    
+    const pid = req.params.id;
+    
+    // We need the name to show on the form header ("Adding for Maria...")
+    const participant = await knex('participants').where({ participantid: pid }).first();
+    
+    res.render("addMilestone", { participant });
+});
+
+// 4. PROCESS ADD FORM
+app.post("/milestones/add/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    const pid = req.params.id;
+    const { milestoneName, dateAchieved, notes } = req.body;
+
+    try {
+        await knex('milestones').insert({
+            participantid: pid,
+            milestonename: milestoneName,
+            dateachieved: dateAchieved,
+            milestonenotes: notes
+        });
+
+        // Redirect back to that person's detail page
+        res.redirect(`/milestones/view/${pid}`);
+
+    } catch (err) {
+        console.error("Error creating milestone:", err);
+        res.send("Error adding milestone.");
+    }
+});
+
+// 5. DELETE MILESTONE
+app.post("/milestones/delete/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    
+    const mid = req.params.id;
+    // We need the participant ID to redirect back correctly
+    const milestone = await knex('milestones').where({ milestoneid: mid }).first();
+    const pid = milestone.participantid;
+
+    await knex('milestones').where({ milestoneid: mid }).del();
+    
+    res.redirect(`/milestones/view/${pid}`);
 });
 
 // app.get("/donations", (req, res) => {
@@ -215,7 +473,7 @@ app.get("/donations", (req, res) => {
             });
 });
 
-// --- ADMIN ROUTES (Manager Only) ---
+// --- ADMIN ROUTES ---
 
 app.get("/admin", (req, res) => {
     if (req.session.level !== 'M') return res.redirect('/');
@@ -227,10 +485,8 @@ app.get("/admin/users", (req, res) => {
     res.render("userMaintenance");
 });
 
-// Rubric Requirement: HTTP 418
 app.get("/teapot", (req, res) => {
     res.status(418).send("418: I'm a little Teapot (Short and stout)");
 });
 
-// --- 6. START SERVER ---
 app.listen(port, () => console.log(`Server running on port ${port}`));
