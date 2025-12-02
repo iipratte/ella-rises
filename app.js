@@ -61,67 +61,79 @@ app.get("/signup", (req, res) => {
 });
 
 app.post('/signup', async (req, res) => {
-    const { firstName, lastName, email, phone, dob, city, state, zipcode } = req.body;
+    const { username, password, firstname, lastname, userdob, email, phone, city, state, zip } = req.body;
   
     try {
-      // Check if user already exists
-      const existingUser = await knex('users')
-        .where({ email: email.toLowerCase() })
-        .first();
+        // Check if user already exists (by email or username)
+        const existingUser = await knex('users')
+            .where('email', email.toLowerCase())
+            .orWhere('username', username.toLowerCase())
+            .first();
   
-      if (existingUser) {
-        return res.render('signup', {
-          error: 'An account with this email already exists',
-          firstName,
-          lastName,
-          email,
-          phone,
-          dob,
-          city,
-          state,
-          zipcode
-        });
-      }
+        if (existingUser) {
+            return res.render('signup', {
+                error: 'An account with this email or username already exists',
+                username,
+                password: '', // Don't repopulate password
+                firstname,
+                lastname,
+                userdob,
+                email,
+                phone,
+                city,
+                state,
+                zip
+            });
+        }
   
-      // Insert new user into database
-      const [newUser] = await knex('users')
-        .insert({
-          first_name: firstName,
-          last_name: lastName,
-          email: email.toLowerCase(),
-          phone,
-          date_of_birth: dob,
-          city,
-          state,
-          zipcode,
-          created_at: knex.fn.now(),
-          updated_at: knex.fn.now()
-        })
-        .returning('*');
+        // Hash password
+        const saltRounds = 12;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
   
-      // Set up session
-      req.session.userId = newUser.id;
-      req.session.userEmail = newUser.email;
+        // Insert new user into database
+        const [newUser] = await knex('users')
+            .insert({
+                username: username.toLowerCase(),
+                password: hashedPassword,
+                firstname,
+                lastname,
+                userdob,
+                email: email.toLowerCase(),
+                phone,
+                city,
+                state,
+                zip,
+                created_at: knex.fn.now(),
+                updated_at: knex.fn.now()
+            })
+            .returning('*');
   
-      // Redirect to dashboard or home
-      res.redirect('/dashboard');
+        // Set up session
+        req.session.userId = newUser.id;
+        req.session.userEmail = newUser.email;
+        req.session.username = newUser.username;
+  
+        // Redirect to dashboard or home
+        res.redirect('/dashboard');
   
     } catch (error) {
-      console.error('Signup error:', error);
-      res.render('signup', {
-        error: 'An error occurred during signup. Please try again.',
-        firstName,
-        lastName,
-        email,
-        phone,
-        dob,
-        city,
-        state,
-        zipcode
-      });
+        console.error('Signup error:', error);
+        res.render('signup', {
+            error: 'An error occurred during signup. Please try again.',
+            username,
+            password: '', // Don't repopulate password
+            firstname,
+            lastname,
+            userdob,
+            email,
+            phone,
+            city,
+            state,
+            zip
+        });
     }
-  });
-  
+});
+
 
 // --- DONATION ROUTES ---
 
