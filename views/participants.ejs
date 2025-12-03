@@ -39,8 +39,8 @@
                     <table class="table table-hover table-striped mb-0" style="vertical-align: middle;">
                         <thead class="table-light">
                             <tr>
-                                <th class="ps-4 py-3">ID</th>
-                                <th class="py-3">Username</th>
+                                <th class="ps-4 py-3">Name</th>
+                                <th class="py-3">Email</th>
                                 <th class="py-3">School / Employer</th>
                                 <th class="py-3">Field of Interest</th>
                                 <th class="py-3">Milestones</th>
@@ -49,26 +49,30 @@
                                 <% } %>
                             </tr>
                         </thead>
+                    
                         <tbody>
-                            
                             <% if (participants.length === 0) { %>
                                 <tr>
-                                    <td colspan="6" class="text-center py-5 text-muted">
+                                   <td colspan="6" class="text-center py-5 text-muted">
                                         No participants found in the database.
                                     </td>
                                 </tr>
                             <% } else { %>
-                                
                                 <% participants.forEach(p => { %>
                                     <tr>
-                                        <td class="ps-4 text-muted small">
-                                            <%= p.participantid %>
-                                        </td>
-
-                                        <td class="fw-bold text-primary">
-                                            <%= p.username %>
+                                        <td class="ps-4 fw-bold text-primary">
+                                            <%= p.participantfirstname %> <%= p.participantlastname %>
+                                            <% if(p.username) { %>
+                                                <br><small class="text-muted fw-normal" style="font-size: 0.75em;">(@<%= p.username %>)</small>
+                                            <% } %>
                                         </td>
                                         
+                                        <td>
+                                            <a href="mailto:<%= p.participantemail %>" class="text-decoration-none text-secondary">
+                                                <%= p.participantemail %>
+                                            </a>
+                                        </td>
+
                                         <td>
                                             <%= p.participantschooloremployer || '-' %>
                                         </td>
@@ -88,13 +92,13 @@
                                         </td>
 
                                         <% if (user && user.role === 'Manager') { %>
-                                            <td class="text-end pe-4">
+                                           <td class="text-end pe-4">
                                                 <div class="btn-group">
                                                     <a href="/participants/edit/<%= p.participantid %>" class="btn btn-sm btn-outline-secondary" title="Edit">
                                                         <i class="bi bi-pencil-fill"></i>
                                                     </a>
                                                     
-                                                    <form action="/participants/delete/<%= p.participantid %>" method="POST" class="d-inline" onsubmit="return confirm('Delete participant <%= p.username %>?');">
+                                                    <form action="/participants/delete/<%= p.participantid %>" method="POST" class="d-inline" onsubmit="return confirm('Delete participant <%= p.participantfirstname %>?');">
                                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                                                             <i class="bi bi-trash-fill"></i>
                                                         </button>
@@ -104,7 +108,6 @@
                                         <% } %>
                                     </tr>
                                 <% }) %>
-                                
                             <% } %>
                         </tbody>
                     </table>
