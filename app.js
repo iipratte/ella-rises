@@ -200,7 +200,7 @@ app.get("/dashboard", (req, res) => {
     if (!req.session.username) return res.redirect('/login');
     // Security Check: Only Managers can access dashboard
     if (req.session.level !== 'M') return res.redirect('/');
-    res.render("dashboard");
+    res.render("admin/dashboard");
 });
 
 // --- ACCOUNT MANAGEMENT (NEW) ---
@@ -544,10 +544,10 @@ app.get("/admin/survey-data", async (req, res) => {
 
     try {
         const responses = await knex('survey_responses').select('*').orderBy('response_id', 'desc');
-        res.render("surveyResponses", { responses });
+        res.render("admin/surveyResponses", { responses });
     } catch (err) {
         console.error("Error fetching responses:", err);
-        res.render("surveyResponses", { responses: [] });
+        res.render("admin/surveyResponses", { responses: [] });
     }
 });
 
@@ -577,11 +577,11 @@ app.get("/milestones", async (req, res) => {
             };
         });
 
-        res.render("milestones", { participants: participantsWithMilestones });
+        res.render("admin/milestones", { participants: participantsWithMilestones });
 
     } catch (err) {
         console.error("Error fetching milestones data:", err);
-        res.render("milestones", { participants: [] });
+        res.render("admin/milestones", { participants: [] });
     }
 });
 
@@ -706,10 +706,10 @@ app.get("/admin/donations", async (req, res) => {
             )
             .orderBy('donations.donationdate', 'desc');
 
-        res.render("donationHistory", { donations });
+        res.render("admin/donationHistory", { donations });
     } catch (err) {
         console.error("Error fetching donation history:", err);
-        res.render("donationHistory", { donations: [] });
+        res.render("admin/donationHistory", { donations: [] });
     }
 });
 
@@ -728,10 +728,10 @@ app.get("/admin/users", async (req, res) => {
     try {
         // Order by username since we aren't using IDs
         const users = await knex('users').select('*').orderBy('username');
-        res.render("userMaintenance", { users });
+        res.render("admin/userMaintenance", { users });
     } catch (err) {
         console.error("Error fetching users:", err);
-        res.render("userMaintenance", { users: [] });
+        res.render("admin/userMaintenance", { users: [] });
     }
 });
 
