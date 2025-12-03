@@ -114,7 +114,7 @@ app.post('/signup', async (req, res) => {
 
         req.session.save(err => {
             if (err) console.error("Session save error:", err);
-            res.redirect('/dashboard');
+            res.redirect('/admin/dashboard');
         });
 
     } catch (error) {
@@ -139,7 +139,7 @@ app.post('/login', async (req, res) => {
         req.session.username = 'Admin';
         req.session.firstName = 'AdminName';
         req.session.level = 'M';
-        return res.redirect('/dashboard');
+        return res.redirect('/admin/dashboard');
     }
     if (username === 'user' && password === 'test') {
         req.session.username = 'Visitor';
@@ -171,7 +171,7 @@ app.post('/login', async (req, res) => {
             
             // Redirect based on role
             if (req.session.level === 'M') {
-                res.redirect('/dashboard');
+                res.redirect('/admin/dashboard');
             } else {
                 res.redirect('/');
             }
@@ -194,7 +194,7 @@ app.get('/logout', (req, res) => {
 // 6. PROTECTED USER ROUTES
 // =========================================
 
-app.get("/dashboard", (req, res) => {
+app.get("/admin/dashboard", (req, res) => {
     if (!req.session.username) return res.redirect('/login');
     // Security Check: Only Managers can access dashboard
     if (req.session.level !== 'M') return res.redirect('/');
@@ -218,7 +218,7 @@ app.get("/account", async (req, res) => {
         res.render("account", { user, success: req.query.success });
     } catch (err) {
         console.error("Error fetching account:", err);
-        res.redirect('/dashboard');
+        res.redirect('/admin/dashboard');
     }
 });
 
