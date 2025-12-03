@@ -25,26 +25,24 @@
                     <table class="table table-hover table-striped mb-0">
                         <thead class="table-dark">
                             <tr>
-                                <th class="ps-4">User ID</th>
+                                <th class="ps-4">Username</th>
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Phone</th>
-                                <th>Location</th>
                                 <th>Access Level</th>
                                 <th class="text-end pe-4">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <% if (!users || users.length === 0) { %>
-                                <tr><td colspan="7" class="text-center py-5">No users found.</td></tr>
+                                <tr><td colspan="6" class="text-center py-5">No users found.</td></tr>
                             <% } else { %>
                                 <% users.forEach(u => { %>
                                     <tr>
-                                        <td class="ps-4 text-muted"><%= u.id %></td>
-                                        <td class="fw-bold"><%= u.firstname %> <%= u.lastname %></td>
+                                        <td class="ps-4 fw-bold text-primary"><%= u.username %></td>
+                                        <td><%= u.firstname %> <%= u.lastname %></td>
                                         <td><%= u.email %></td>
-                                        <td class="text-muted"><%= u.phone || 'N/A' %></td>
-                                        <td class="text-muted"><%= u.city ? u.city + ', ' + u.state : 'N/A' %></td>
+                                        <td class="text-muted"><%= u.phone || '-' %></td>
                                         <td>
                                             <% if (u.level === 'M') { %>
                                                 <span class="badge bg-danger">Manager</span>
@@ -54,9 +52,9 @@
                                         </td>
                                         <td class="text-end pe-4">
                                             <div class="btn-group">
-                                                <a href="/admin/users/edit/<%= u.id %>" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                                <a href="/admin/users/edit/<%= u.username %>" class="btn btn-sm btn-outline-secondary">Edit</a>
                                                 
-                                                <form action="/admin/users/delete/<%= u.id %>" method="POST" class="d-inline" onsubmit="return confirm('Delete user <%= u.firstname %> <%= u.lastname %>?');">
+                                                <form action="/admin/users/delete/<%= u.username %>" method="POST" class="d-inline" onsubmit="return confirm('Delete user <%= u.username %>?');">
                                                     <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                                 </form>
                                             </div>

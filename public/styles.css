@@ -131,6 +131,12 @@ h1 { letter-spacing: -1px; } /* Tighter letter spacing for big headers */
     --bs-table-bg: transparent;
 }
 
+/* --- ADD THIS NEW RULE TO FIX VERTICAL ALIGNMENT --- */
+.table th, .table td {
+    vertical-align: middle;
+}
+/* -------------------------------------------------- */
+
 .table thead th {
     background-color: var(--er-primary);
     color: white;
