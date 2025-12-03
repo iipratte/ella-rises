@@ -310,27 +310,31 @@ app.post("/account", async (req, res) => {
 
 // --- PARTICIPANTS ---
 
+// --- PARTICIPANTS LIST ---
 app.get("/participants", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
-        // 1. Fetch participants (New Schema)
+        // 1. Fetch participants with REAL NAMES
         const participants = await knex('participants')
             .select(
                 'participantid',
-                'username',
+                'participantfirstname', // <--- Added
+                'participantlastname',  // <--- Added
+                'participantemail',     // <--- Added
                 'participantschooloremployer',
-                'participantfieldofinterest'
+                'participantfieldofinterest',
+                'username' // Keep this just in case
             )
-            .orderBy('username', 'asc');
+            .orderBy('participantid', 'desc'); // Sort by Last Name now
 
-        // 2. Fetch milestone counts separately
+        // 2. Fetch milestone counts
         const milestoneCounts = await knex('milestones')
             .select('participantid')
-            .count('milestoneno as count')
+            .count('milestoneid as count')
             .groupBy('participantid');
 
-        // 3. Merge counts in JavaScript (Avoids DB type mismatch)
+        // 3. Merge counts
         participants.forEach(p => {
             const match = milestoneCounts.find(m => m.participantid == p.participantid);
             p.milestone_count = match ? match.count : 0;
@@ -345,19 +349,12 @@ app.get("/participants", async (req, res) => {
 });
 
 // GET Add Form
-app.get("/participants/add", async (req, res) => {
+app.get("/participants/add", (req, res) => {
     if (!req.session.username || req.session.level !== 'M') {
         return res.redirect('/participants');
     }
-    
-    try {
-        // Fetch all users to populate the dropdown
-        const users = await knex('users').select('username').orderBy('username');
-        res.render("addParticipant", { users });
-    } catch (err) {
-        console.error("Error fetching users for dropdown:", err);
-        res.render("addParticipant", { users: [] });
-    }
+    // No need to fetch users dropdown anymore
+    res.render("addParticipant");
 });
 
 // POST Add Form
@@ -366,18 +363,44 @@ app.post("/participants/add", async (req, res) => {
         return res.redirect('/');
     }
 
-    const { username, schoolOrEmployer, fieldOfInterest } = req.body;
+    const { firstName, lastName, email, phone, dob, zip, employer, interest, username } = req.body;
 
     try {
+        // --- VALIDATION: CHECK USERNAME ---
+        if (username && username.trim() !== "") {
+            const userExists = await knex('users').where({ username: username.toLowerCase() }).first();
+            
+            if (!userExists) {
+                // If username doesn't exist, reload page with error and keep their typed data
+                return res.render("addParticipant", { 
+                    error: "Error: That username does not exist. Please create an account first or check the spelling.",
+                    firstName, lastName, email, phone, dob, zip, employer, interest, username
+                });
+            }
+        }
+
+        // --- INSERT NEW PARTICIPANT ---
         await knex('participants').insert({
-            username: username,
-            participantschooloremployer: schoolOrEmployer,
-            participantfieldofinterest: fieldOfInterest
+            participantfirstname: firstName,
+            participantlastname: lastName,
+            participantemail: email,
+            participantphone: phone,
+            participantdob: dob || null, // Handle empty date
+            participantzip: zip,
+            participantschooloremployer: employer,
+            participantfieldofinterest: interest,
+            username: username || null // Insert null if empty
         });
+
         res.redirect('/participants');
+
     } catch (err) {
         console.error("Error adding participant:", err);
-        res.send("Error adding participant. Check if User exists.");
+        // Render page with generic database error
+        res.render("addParticipant", { 
+            error: "Database error: " + err.message,
+            firstName, lastName, email, phone, dob, zip, employer, interest, username
+        });
     }
 });
 
@@ -563,7 +586,7 @@ app.get("/milestones", async (req, res) => {
         const safeParticipants = participants.length > 0 ? participants : await knex('participants').orderBy('username', 'asc');
 
         const milestones = await knex('milestones')
-            .select('milestoneno', 'participantid', 'milestonetitle', 'milestonedate', 'milestonenotes')
+            .select('milestoneid', 'participantid', 'milestonetitle', 'milestonedate', 'milestonenotes')
             .orderBy('milestonedate', 'desc');
 
         // Combine logic
@@ -636,7 +659,7 @@ app.post("/milestones/delete/:pid/:mno", async (req, res) => {
 
     try {
         await knex('milestones')
-            .where({ participantid: pid, milestoneno: mno })
+            .where({ participantid: pid, milestoneid: mno })
             .del();
         res.redirect(`/milestones/view/${pid}`);
     } catch(err) {

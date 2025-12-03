@@ -1,65 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Add New Event - Ella Rises</title>
-    <%- include('partials/head') %> 
+    <title>Add Participant - Ella Rises</title>
+    <%- include('partials/head') %>
 </head>
 <body class="bg-light">
 
     <%- include('partials/header') %>
 
-    <div class="container mt-5" style="max-width: 700px;">
+    <div class="container mt-5 mb-5" style="max-width: 800px;">
         <div class="card shadow-lg border-0">
             <div class="card-header py-3" style="background-color: var(--er-primary);">
-                <h4 class="mb-0 fw-bold text-white" style="font-family: 'Playfair Display', serif;">Create New Event</h4>
+                <h4 class="mb-0 fw-bold text-white" style="font-family: 'Playfair Display', serif;">Add New Participant</h4>
             </div>
-            
+
             <div class="card-body p-4">
                 
-                <form action="/events/add" method="POST">
-                    
-                    <h6 class="text-muted text-uppercase fw-bold mb-3">Event Details</h6>
-                     
-                    <div class="mb-3">
-                        <label for="eventName" class="form-label">Event Name</label>
-                        <input type="text" class="form-control" id="eventName" name="eventName" required placeholder="e.g., Annual Art Gala">
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle-fill me-2"></i> <%= error %>
+                    </div>
+                <% } %>
+
+                <form action="/participants/add" method="POST">
+
+                    <h6 class="text-uppercase text-muted fw-bold mb-3 small">Personal Information</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">First Name</label>
+                            <input type="text" class="form-control" name="firstName" required value="<%= typeof firstName !== 'undefined' ? firstName : '' %>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Last Name</label>
+                            <input type="text" class="form-control" name="lastName" required value="<%= typeof lastName !== 'undefined' ? lastName : '' %>">
+                        </div>
                     </div>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="eventType" class="form-label">Event Type</label>
-                             <select class="form-select" id="eventType" name="eventType">
-                                <option value="Workshop">Workshop</option>
-                                <option value="Leadership">Leadership</option>
-                                 <option value="Mentoring">Mentoring</option>
-                                <option value="Community">Community Service</option>
-                                <option value="Other">Other</option>
-                             </select>
+                            <label class="form-label fw-bold">Email</label>
+                            <input type="email" class="form-control" name="email" required value="<%= typeof email !== 'undefined' ? email : '' %>">
                         </div>
                         <div class="col-md-6">
-                            <label for="eventDate" class="form-label">Date & Time</label>
-                             <input type="datetime-local" class="form-control" id="eventDate" name="eventDate" required>
+                            <label class="form-label fw-bold">Phone</label>
+                            <input type="tel" class="form-control" name="phone" value="<%= typeof phone !== 'undefined' ? phone : '' %>">
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                         <label for="eventDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="eventDescription" name="eventDescription" rows="3" placeholder="Describe the activities..."></textarea>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Date of Birth</label>
+                            <input type="date" class="form-control" name="dob" value="<%= typeof dob !== 'undefined' ? dob : '' %>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Zip Code</label>
+                            <input type="text" class="form-control" name="zip" value="<%= typeof zip !== 'undefined' ? zip : '' %>">
+                        </div>
                     </div>
 
-                    <hr class="my-4">
+                    <h6 class="text-uppercase text-muted fw-bold mb-3 small">Program Details</h6>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">School / Employer</label>
+                            <input type="text" class="form-control" name="employer" value="<%= typeof employer !== 'undefined' ? employer : '' %>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Field of Interest</label>
+                            <input type="text" class="form-control" name="interest" value="<%= typeof interest !== 'undefined' ? interest : '' %>">
+                        </div>
+                    </div>
 
-                     <h6 class="text-muted text-uppercase fw-bold mb-3">Logistics</h6>
-
-                    <div class="mb-4">
-                        <label for="eventLocation" class="form-label">Location / Venue</label>
-                        <input type="text" class="form-control" id="eventLocation" name="eventLocation" required placeholder="e.g., UVU Ballroom or 123 Main St">
+                    <div class="alert alert-light border mb-4">
+                        <label class="form-label fw-bold text-primary">Link to User Account (Optional)</label>
+                        <input type="text" class="form-control" name="username" placeholder="Enter username if you have an account..." value="<%= typeof username !== 'undefined' ? username : '' %>">
+                        <div class="form-text text-muted small">
+                            If provided, this must match an existing username. Leave blank if they haven't signed up yet.
+                        </div>
                     </div>
 
                     <div class="d-flex justify-content-between">
-                        <a href="/events" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary px-5">Save Event</button>
-                     </div>
+                        <a href="/participants" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">Add Participant</button>
+                    </div>
 
                 </form>
             </div>
