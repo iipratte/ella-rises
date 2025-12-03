@@ -16,25 +16,31 @@
                         <h4 class="mb-0">Edit User</h4>
                     </div>
                     <div class="card-body p-4">
-                        <form action="/admin/users/edit/<%= userToEdit.userID %>" method="POST">
+                        <form action="/admin/users/edit/<%= userToEdit.username %>" method="POST">
                             
+                            <div class="mb-3">
+                                <label for="username" class="form-label fw-bold">Username</label>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       value="<%= userToEdit.username %>" required>
+                            </div>
+
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="firstname" class="form-label">First Name *</label>
+                                    <label for="firstname" class="form-label">First Name</label>
                                     <input type="text" class="form-control" id="firstname" name="firstname" 
-                                           value="<%= userToEdit.firstname %>" required>
+                                           value="<%= userToEdit.firstname %>">
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="lastname" class="form-label">Last Name *</label>
+                                    <label for="lastname" class="form-label">Last Name</label>
                                     <input type="text" class="form-control" id="lastname" name="lastname" 
-                                           value="<%= userToEdit.lastname %>" required>
+                                           value="<%= userToEdit.lastname %>">
                                 </div>
                             </div>
 
                             <div class="mb-3">
-                                <label for="email" class="form-label">Email *</label>
+                                <label for="email" class="form-label">Email</label>
                                 <input type="email" class="form-control" id="email" name="email" 
-                                       value="<%= userToEdit.email %>" required>
+                                       value="<%= userToEdit.email %>">
                             </div>
 
                             <div class="row mb-3">
