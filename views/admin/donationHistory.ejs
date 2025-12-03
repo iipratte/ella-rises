@@ -40,8 +40,12 @@
                             <% } else { %>
                                 <% donations.forEach(d => { %>
                                     <tr>
-                                        <td class="ps-4">
-                                            <%= new Date(d.donationdate).toLocaleDateString() %>
+                                        <td>
+                                            <% if (d.donationdate) { %>
+                                                <%= new Date(d.donationdate).toLocaleDateString() %>
+                                            <% } else { %>
+                                                <span class="text-muted small fst-italic">Unknown Date</span>
+                                            <% } %>
                                         </td>
                                         <td class="fw-bold">
                                             <%= d.participantfirstname %> <%= d.participantlastname %>
