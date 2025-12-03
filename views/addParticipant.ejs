@@ -17,36 +17,19 @@
                 
                 <form action="/participants/add" method="POST">
                     
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="firstName" class="form-label">First Name</label>
-                            <input type="text" class="form-control" id="firstName" name="firstName" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="lastName" class="form-label">Last Name</label>
-                            <input type="text" class="form-control" id="lastName" name="lastName" required>
-                        </div>
+                    <div class="mb-3">
+                        <label for="username" class="form-label fw-bold">Username / Name</label>
+                        <input type="text" class="form-control" id="username" name="username" required placeholder="Enter participant username or name">
                     </div>
 
                     <div class="mb-3">
-                        <label for="email" class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
+                        <label for="schoolOrEmployer" class="form-label fw-bold">School or Employer</label>
+                        <input type="text" class="form-control" id="schoolOrEmployer" name="schoolOrEmployer" placeholder="e.g. UVU or Local Business">
                     </div>
 
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <label for="role" class="form-label">Role</label>
-                            <select class="form-select" id="role" name="role">
-                                <option value="Participant">Participant</option>
-                                <option value="Mentor">Mentor</option>
-                                <option value="Donor">Donor</option>
-                                <option value="Parent">Parent</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="city" class="form-label">City</label>
-                            <input type="text" class="form-control" id="city" name="city">
-                        </div>
+                    <div class="mb-4">
+                        <label for="fieldOfInterest" class="form-label fw-bold">Field of Interest</label>
+                        <input type="text" class="form-control" id="fieldOfInterest" name="fieldOfInterest" placeholder="e.g. Computer Science, Art, Nursing">
                     </div>
 
                     <div class="d-flex justify-content-between">
