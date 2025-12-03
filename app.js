@@ -704,7 +704,8 @@ app.get("/admin/donations", async (req, res) => {
                 'participants.participantlastname',
                 'participants.participantemail'
             )
-            .orderBy('donations.donationdate', 'desc');
+            // Sort by date descending, but force NULL dates to the bottom
+            .orderByRaw('donations.donationdate DESC NULLS LAST');
 
         res.render("admin/donationHistory", { donations });
     } catch (err) {
