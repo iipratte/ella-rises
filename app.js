@@ -785,4 +785,108 @@ app.get("/teapot", (req, res) => {
     res.status(418).send("418: I'm a little Teapot (Short and stout)");
 });
 
+// --- ACCOUNT MANAGEMENT ROUTES ---
+
+// 1. Show Account Page
+app.get("/account", async (req, res) => {
+    if (!req.session.username) return res.redirect('/login');
+
+    try {
+        const user = await knex('users').where({ username: req.session.username }).first();
+        res.render("account", { user, success: req.query.success });
+    } catch (err) {
+        console.error("Error fetching account:", err);
+        res.redirect('/dashboard');
+    }
+});
+
+app.post("/account", async (req, res) => {
+    if (!req.session.username) return res.redirect('/login');
+
+    const { username, firstname, lastname, userdob, email, phone, city, state, zip, password } = req.body;
+
+    try {
+        // Get current user first
+        const currentUser = await knex('users').where({ username: req.session.username }).first();
+        
+        if (!currentUser) {
+            console.log("Current user not found");
+            return res.redirect('/login');
+        }
+
+        // Check if new username is taken by someone else
+        if (username.toLowerCase() !== currentUser.username.toLowerCase()) {
+            const existingUsername = await knex('users')
+                .where({ username: username.toLowerCase() })
+                .first();
+            
+            if (existingUsername) {
+                return res.render("account", { 
+                    user: req.body,
+                    error: "Username is already taken." 
+                });
+            }
+        }
+
+        // Check if new email is taken by someone else
+        if (email.toLowerCase() !== currentUser.email.toLowerCase()) {
+            const existingEmail = await knex('users')
+                .where({ email: email.toLowerCase() })
+                .whereNot({ username: currentUser.username })
+                .first();
+            
+            if (existingEmail) {
+                return res.render("account", { 
+                    user: req.body,
+                    error: "Email is already taken." 
+                });
+            }
+        }
+
+        const updateData = {
+            firstname,
+            lastname,
+            userdob,
+            email: email.toLowerCase(),
+            phone,
+            city,
+            state,
+            zip
+        };
+
+        // Only update password if they typed something new
+        if (password && password.trim() !== "") {
+            updateData.password = password; 
+        }
+
+        // If username is changing, we need to handle it differently
+        if (username.toLowerCase() !== currentUser.username.toLowerCase()) {
+            // Delete old record and insert new one with new username
+            await knex.transaction(async (trx) => {
+                const userData = { ...currentUser, ...updateData, username: username.toLowerCase() };
+                await trx('users').where({ username: currentUser.username }).del();
+                await trx('users').insert(userData);
+            });
+        } else {
+            // Just update the existing record
+            await knex('users')
+                .where({ username: currentUser.username })
+                .update(updateData);
+        }
+
+        // Update session variables
+        req.session.username = username.toLowerCase();
+        req.session.firstName = updateData.firstname;
+
+        res.redirect('/account?success=true');
+
+    } catch (err) {
+        console.error("Error updating account - Full error:", err);
+        res.render("account", { 
+            user: req.body,
+            error: "Error updating account. Please try again." 
+        });
+    }
+});
+
 app.listen(port, () => console.log(`Server running on port ${port}`));
