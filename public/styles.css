@@ -64,6 +64,15 @@ h1 { letter-spacing: -1px; } /* Tighter letter spacing for big headers */
     transform: translateY(-1px);
 }
 
+/* Logo Rotation Animation */
+.navbar-brand img {
+    transition: transform 0.8s ease-in-out; /* Smooths the animation over 0.8 seconds */
+}
+
+.navbar-brand:hover img {
+    transform: rotate(360deg); /* Rotates 1 full circle clockwise */
+}
+
 /* --- 3. BUTTONS (The "Berry" Pop) --- */
 .btn {
     border-radius: 50px; /* Pill shapes */
