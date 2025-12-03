@@ -74,10 +74,11 @@ app.get("/signup", (req, res) => {
 });
 
 app.post('/signup', async (req, res) => {
-    const { username, password, firstname, lastname, userdob, email, phone, city, state, zip } = req.body;
+    // Update 1: Destructure 'dob' instead of 'userdob'
+    const { username, password, firstname, lastname, dob, email, phone, city, state, zip } = req.body;
 
     try {
-        // 1. Check if user already exists (by email or username)
+        // Check for existing user...
         const existingUser = await knex('users')
             .where('email', email.toLowerCase())
             .orWhere('username', username.toLowerCase())
@@ -86,19 +87,18 @@ app.post('/signup', async (req, res) => {
         if (existingUser) {
             return res.render('signup', {
                 error: 'An account with this email or username already exists',
-                username, password: '', firstname, lastname, userdob, email, phone, city, state, zip
+                username, password: '', firstname, lastname, dob, email, phone, city, state, zip
             });
         }
 
-        // 2. Insert new user into database
-        // Note: Returning '*' helps us get the data back immediately
+        // Update 2: Insert into 'dob' column, NOT 'userdob'
         const [newUser] = await knex('users')
             .insert({
                 username: username.toLowerCase(),
-                password: password, // Plain text (per your setup)
+                password: password,
                 firstname,
                 lastname,
-                userdob,
+                dob: dob, // Insert the form value 'dob' into the DB column 'dob'
                 email: email.toLowerCase(),
                 phone,
                 city,
@@ -107,23 +107,21 @@ app.post('/signup', async (req, res) => {
             })
             .returning('*');
 
-        // 3. Set Session Variables (No User ID used)
-        req.session.userEmail = newUser.email;
+        // Set session...
         req.session.username = newUser.username;
         req.session.firstName = newUser.firstname;
-        req.session.level = newUser.level || 'U'; // Default to User
+        req.session.level = newUser.level || 'U';
 
-        // 4. Save and Redirect
         req.session.save(err => {
             if (err) console.error("Session save error:", err);
-            res.redirect('/dashboard');
+            res.redirect('/admin/dashboard');
         });
 
     } catch (error) {
         console.error('Signup error details:', error);
         res.render('signup', {
             error: 'An error occurred during signup. Please try again.',
-            username, password: '', firstname, lastname, userdob, email, phone, city, state, zip
+            username, password: '', firstname, lastname, dob, email, phone, city, state, zip
         });
     }
 });
@@ -141,7 +139,7 @@ app.post('/login', async (req, res) => {
         req.session.username = 'Admin';
         req.session.firstName = 'AdminName';
         req.session.level = 'M';
-        return res.redirect('/dashboard');
+        return res.redirect('/admin/dashboard');
     }
     if (username === 'user' && password === 'test') {
         req.session.username = 'Visitor';
@@ -173,7 +171,7 @@ app.post('/login', async (req, res) => {
             
             // Redirect based on role
             if (req.session.level === 'M') {
-                res.redirect('/dashboard');
+                res.redirect('/admin/dashboard');
             } else {
                 res.redirect('/');
             }
@@ -196,7 +194,7 @@ app.get('/logout', (req, res) => {
 // 6. PROTECTED USER ROUTES
 // =========================================
 
-app.get("/dashboard", (req, res) => {
+app.get("/admin/dashboard", (req, res) => {
     if (!req.session.username) return res.redirect('/login');
     // Security Check: Only Managers can access dashboard
     if (req.session.level !== 'M') return res.redirect('/');
@@ -220,7 +218,7 @@ app.get("/account", async (req, res) => {
         res.render("account", { user, success: req.query.success });
     } catch (err) {
         console.error("Error fetching account:", err);
-        res.redirect('/dashboard');
+        res.redirect('/admin/dashboard');
     }
 });
 

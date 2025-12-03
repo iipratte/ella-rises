@@ -26,11 +26,29 @@
 }
 
 /* --- 1. BASE STYLES --- */
+
+/* Set html to full height */
+html {
+    height: 100%;
+}
+
 body {
     font-family: var(--font-body);
-    background-color: var(--er-bg); /* Warm Cream instead of stark white */
+    background-color: #ffffff; 
     color: var(--er-text);
     line-height: 1.7;
+    
+    /* STICKY FOOTER SETUP */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Forces body to be at least the height of the screen */
+    margin: 0;
+}
+
+/* Explicitly force the footer to the bottom */
+footer {
+    margin-top: auto !important;
+    width: 100%;
 }
 
 h1, h2, h3, h4, h5, .navbar-brand {
