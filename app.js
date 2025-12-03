@@ -793,6 +793,15 @@ app.get("/account", async (req, res) => {
 
     try {
         const user = await knex('users').where({ username: req.session.username }).first();
+        
+        // --- FIXES ---
+        // 1. Fix the Name (so "Hi, Name" works)
+        user.firstName = user.firstname; 
+        
+        // 2. Fix the Role (so the Manager Menu appears)
+        // The header checks for 'Manager', but the DB only has 'M'
+        user.role = user.level === 'M' ? 'Manager' : 'User';
+
         res.render("account", { user, success: req.query.success });
     } catch (err) {
         console.error("Error fetching account:", err);
