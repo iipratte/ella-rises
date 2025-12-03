@@ -65,8 +65,18 @@ h1 { letter-spacing: -1px; } /* Tighter letter spacing for big headers */
 }
 
 /* Logo Rotation Animation */
+/* 3. Base state (Modified to add 10px padding) */
 .navbar-brand img {
-    transition: transform 0.8s ease-in-out; /* Smooths the animation over 0.8 seconds */
+    transition: transform 0.5s ease-out; 
+    
+    /* ADDED PADDING HERE */
+    padding: 4px; 
+    padding-bottom: 7px;
+
+    /* FIX: Alignment & Center Stability */
+    transform-origin: 50% 50%; 
+    backface-visibility: hidden; 
+    
 }
 
 .navbar-brand:hover img {
