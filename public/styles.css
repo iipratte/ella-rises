@@ -1,168 +1,148 @@
 /* =========================================
-   ELLA RISES - BRAND MATCH THEME
-   Palette: Raspberry, Blush, Charcoal, White
-   Aesthetic: Editorial, Empowering, Clean
+   ELLA RISES - LIGHT & BRIGHT THEME
+   Palette: Blush, Sage, Charcoal, White
+   Aesthetic: Airy, Welcoming, Authentic
    ========================================= */
 
 :root {
-    /* BRAND COLORS */
-    --er-primary: #C2185B;       /* Deep Raspberry/Magenta (The Donate Button Color) */
-    --er-primary-dark: #880E4F;  /* Darker Berry for hovers */
-    --er-accent: #F8BBD0;        /* Soft Blush Pink */
-    --er-bg: #FFF0F5;            /* Very faint Lavender Blush (Page Background) */
-    --er-dark: #121212;          /* True Black */
-    --er-text: #2c2c2c;          /* Dark Grey for readability */
-    --er-gray-light: #f4f4f4;    
+    /* BRAND COLORS (From Brand Guide) */
+    --er-primary: #F9AFB1;       /* The "Ella Pink" (Soft Blush) */
+    --er-primary-dark: #E58E91;  /* Slightly darker pink for hovers */
+    --er-sage: #9AB59D;          /* Sage Green (Secondary Accent) */
+    --er-charcoal: #3A3F3B;      /* Brand Dark Grey (Not Black) */
+    --er-text: #5A5A5A;          /* Softer Grey for body text */
+    --er-bg: #FFFAF4;            /* Warm White / Cream Background */
+    --er-white: #FFFFFF;
     
     /* UI VARIABLES */
     --radius-sm: 8px;
     --radius-lg: 20px;
-    --shadow-soft: 0 10px 30px rgba(194, 24, 91, 0.08); /* Pink-tinted shadow */
-    --shadow-hover: 0 15px 35px rgba(194, 24, 91, 0.15);
+    --shadow-soft: 0 10px 40px rgba(249, 175, 177, 0.15); /* Pink-tinted glow */
+    --shadow-hover: 0 15px 35px rgba(58, 63, 59, 0.1);    /* Charcoal shadow */
     
     /* FONTS */
-    --font-heading: 'Playfair Display', serif; /* Elegant, Editorial */
-    --font-body: 'Montserrat', sans-serif;     /* Clean, Modern */
+    --font-heading: 'Playfair Display', serif; 
+    --font-body: 'Montserrat', sans-serif;
 }
 
 /* --- 1. BASE STYLES --- */
 body {
     font-family: var(--font-body);
-    background-color: #ffffff; /* Clean white canvas */
+    background-color: var(--er-bg); /* Warm Cream instead of stark white */
     color: var(--er-text);
     line-height: 1.7;
 }
 
-/* Typography that feels "Expensive" */
 h1, h2, h3, h4, h5, .navbar-brand {
     font-family: var(--font-heading);
-    color: var(--er-dark);
-    font-weight: 400; /* Serif fonts look better regular, not bold */
+    color: var(--er-charcoal);
+    font-weight: 700;
 }
 
-h1 { letter-spacing: -1px; } /* Tighter letter spacing for big headers */
-
-/* --- 2. NAVIGATION (High Contrast) --- */
+/* --- 2. NAVIGATION (Light & Clean) --- */
 .navbar {
-    background-color: var(--er-dark) !important;
-    padding: 1rem 0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background-color: var(--er-white) !important;
+    padding: 0.5rem 0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03); /* Very subtle shadow */
 }
 
+/* Links are now Charcoal (Dark), turning Pink on hover */
 .nav-link {
     font-family: var(--font-body);
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 1.5px; /* Wide spacing for elegance */
-    color: rgba(255,255,255,0.8) !important;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    color: var(--er-charcoal) !important; 
+    padding: 0.5rem 1rem !important;
     transition: all 0.3s ease;
 }
 
 .nav-link:hover, .nav-link.active {
-    color: var(--er-accent) !important; /* Blush pink on hover */
-    transform: translateY(-1px);
+    color: var(--er-primary-dark) !important;
+    background-color: rgba(249, 175, 177, 0.1); /* Subtle pink backing */
+    border-radius: 20px;
 }
 
-/* Logo Rotation Animation */
-/* 3. Base state (Modified to add 10px padding) */
-.navbar-brand img {
-    transition: transform 0.5s ease-out; 
-    
-    /* ADDED PADDING HERE */
-    padding: 4px;
-    padding-left: 15px;
-    padding-right: 20px;
-    padding-bottom: 7px;
-
-    /* FIX: Alignment & Center Stability */
-    transform-origin: 50% 50%; 
-    backface-visibility: hidden; 
-    
-}
-
-.navbar-brand:hover img {
-    transform: rotate(360deg); /* Rotates 1 full circle clockwise */
-}
-
-/* --- 3. BUTTONS (The "Berry" Pop) --- */
-.btn {
-    border-radius: 50px; /* Pill shapes */
-    padding: 0.7rem 2rem;
+/* User Greeting Text */
+.navbar-text {
+    color: var(--er-charcoal) !important;
     font-weight: 600;
+    font-size: 0.85rem;
+}
+
+/* --- 3. BUTTONS (Pastel Power) --- */
+.btn {
+    border-radius: 50px;
+    padding: 0.7rem 2rem;
+    font-weight: 700;
     letter-spacing: 0.5px;
     border: none;
     transition: all 0.3s ease;
 }
 
-/* The Main Action (Donate/Submit) */
+/* Primary = Charcoal (High Contrast) or Sage? Let's go Charcoal for contrast */
 .btn-primary {
-    background: var(--er-primary);
-    background: linear-gradient(135deg, var(--er-primary) 0%, #D81B60 100%);
+    background-color: var(--er-charcoal);
     color: white;
-    box-shadow: 0 4px 15px rgba(194, 24, 91, 0.3);
+    box-shadow: 0 4px 10px rgba(58, 63, 59, 0.2);
 }
 
 .btn-primary:hover {
-    background: var(--er-primary-dark);
-    box-shadow: 0 6px 20px rgba(194, 24, 91, 0.5);
+    background-color: black;
     transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(58, 63, 59, 0.3);
 }
 
-/* Secondary Actions */
-.btn-warning, .btn-secondary {
-    background-color: white;
-    color: var(--er-primary);
-    border: 2px solid var(--er-primary);
+/* Donate Button = The Brand Pink */
+.btn-warning {
+    background-color: var(--er-primary);
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(249, 175, 177, 0.4);
 }
 
 .btn-warning:hover {
-    background-color: var(--er-primary);
+    background-color: var(--er-primary-dark);
+    color: white !important;
+    transform: translateY(-2px);
+}
+
+/* Outline Buttons */
+.btn-outline-light {
+    border: 2px solid var(--er-charcoal);
+    color: var(--er-charcoal);
+}
+
+.btn-outline-light:hover {
+    background-color: var(--er-charcoal);
     color: white;
 }
 
-/* --- 4. CARDS (Soft & Feminine) --- */
+/* --- 4. CARDS (Airy) --- */
 .card {
     border: none;
     border-radius: var(--radius-lg);
     background: white;
     box-shadow: var(--shadow-soft);
-    overflow: hidden;
-    transition: all 0.4s ease;
+    border: 1px solid rgba(0,0,0,0.02); /* Tiny border for definition */
 }
 
-.card:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-hover);
-}
-
-/* Specific Header Styling for Cards */
 .card-header {
     background-color: white;
-    border-bottom: 2px solid var(--er-gray-light);
+    border-bottom: 2px solid var(--er-bg);
     padding: 1.5rem;
 }
 
-.card-header h1, .card-header h2, .card-header h4 {
-    color: var(--er-primary); /* Pink headers inside cards */
-}
+/* Overrides for specific card headers */
+.bg-primary { background-color: var(--er-sage) !important; } /* Sage Green Headers */
+.text-primary { color: var(--er-charcoal) !important; }
 
-/* --- 5. TABLES (Clean & Pink Accents) --- */
-.table {
-    --bs-table-bg: transparent;
-}
-
-/* --- ADD THIS NEW RULE TO FIX VERTICAL ALIGNMENT --- */
-.table th, .table td {
-    vertical-align: middle;
-}
-/* -------------------------------------------------- */
-
+/* --- 5. TABLES --- */
 .table thead th {
-    background-color: var(--er-primary);
+    background-color: var(--er-sage) !important; /* Sage Green Headers */
     color: white;
     font-family: var(--font-body);
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 1px;
@@ -170,67 +150,77 @@ h1 { letter-spacing: -1px; } /* Tighter letter spacing for big headers */
     padding: 1rem;
 }
 
-.table tbody tr {
-    transition: background-color 0.2s;
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: var(--er-bg); /* Cream stripes */
 }
 
-.table tbody tr:hover {
-    background-color: var(--er-bg); /* Rows turn blush pink on hover */
-}
-
-/* --- 6. FORMS (Minimalist) --- */
+/* --- 6. FORMS --- */
 .form-control, .form-select {
-    border-radius: var(--radius-sm);
-    border: 1px solid #ddd;
+    background-color: var(--er-bg);
+    border: 1px solid #eee;
     padding: 0.8rem;
-    background-color: #fafafa;
 }
 
-.form-control:focus, .form-select:focus {
+.form-control:focus {
     background-color: white;
     border-color: var(--er-primary);
-    box-shadow: 0 0 0 4px rgba(194, 24, 91, 0.1);
+    box-shadow: 0 0 0 4px rgba(249, 175, 177, 0.2); /* Pink Glow */
 }
 
 /* --- 7. UTILITIES --- */
-/* Makes text selection Pink */
+/* Selection Color */
 ::selection {
-    background: var(--er-accent);
-    color: var(--er-dark);
+    background: var(--er-primary);
+    color: white;
 }
 
-/* Custom badge colors */
-.badge.bg-primary { background-color: var(--er-primary) !important; }
-.badge.bg-secondary { background-color: #333 !important; }
-.text-primary { color: var(--er-primary) !important; }
+/* Prevent scroll */
+body, html {
+    overflow-x: hidden;
+    width: 100%;
+}
 
 /* =========================================
-   FIX PACK: HERO & NAVBAR ADJUSTMENTS (No Scroll)
+   FIXES: HERO VISIBILITY & ANIMATION
    ========================================= */
 
-/* 1. FIX: Make Hero Text White */
+/* 1. FORCE HERO TEXT WHITE */
+/* The main title needs to be white to show up against the dark photo overlay */
 header h1, header p.lead {
     color: #ffffff !important;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+    text-shadow: 0 2px 15px rgba(0, 0, 0, 0.6); /* Adds a shadow to pop against the image */
 }
 
-/* 2. FIX: Prevent Nav Items from Splitting */
-/* We reduce the font size slightly instead of forcing the width */
-.nav-link {
-    font-size: 0.75rem !important; /* Slightly smaller text */
-    letter-spacing: 1px !important;
-    padding-left: 0.5rem !important; /* Tighter padding */
-    padding-right: 0.5rem !important;
+/* 2. FIX "VIEW EVENTS" BUTTON */
+/* We restore the 'outline-light' button to actually be White for the dark header */
+.btn-outline-light {
+    border: 2px solid #ffffff !important;
+    color: #ffffff !important;
 }
 
-/* 3. FIX: Keep "Hi, Name" on one line */
-.navbar-text {
-    white-space: nowrap;
-    font-size: 0.85rem;
+.btn-outline-light:hover {
+    background-color: #ffffff !important;
+    color: var(--er-charcoal) !important; /* Turns dark when you hover */
 }
 
-/* 4. PREVENT SIDEWAYS SCROLL */
-body, html {
-    overflow-x: hidden; /* This cuts off any accidental side-scroll */
-    width: 100%;
+/* 3. RESTORE LOGO SPIN ANIMATION */
+.navbar-brand img {
+    transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Bouncy spin */
+    transform-origin: center center;
+    padding: 5px; /* Gives it room to spin without clipping */
+}
+
+.navbar-brand:hover img {
+    transform: rotate(360deg);
+}
+
+/* FIX: Header Buttons (Charcoal on White) */
+.btn-outline-dark {
+    color: var(--er-charcoal);
+    border: 1px solid var(--er-charcoal);
+}
+
+.btn-outline-dark:hover {
+    background-color: var(--er-charcoal);
+    color: white;
 }
