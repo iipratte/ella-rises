@@ -51,13 +51,13 @@
                                             <% } %>
                                         </td>
                                         <td class="text-end pe-4">
-                                            <div class="btn-group">
-                                                <a href="/admin/users/edit/<%= u.username %>" class="btn btn-sm btn-outline-secondary">Edit</a>
-                                                
-                                                <form action="/admin/users/delete/<%= u.username %>" method="POST" class="d-inline" onsubmit="return confirm('Delete user <%= u.username %>?');">
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                                                </form>
-                                            </div>
+                                            <a href="/admin/users/edit/<%= u.username %>" class="btn btn-sm btn-outline-secondary me-2">
+                                                Edit
+                                            </a>
+                                            
+                                            <form action="/admin/users/delete/<%= u.username %>" method="POST" class="d-inline" onsubmit="return confirm('Delete user <%= u.username %>?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </form>
                                         </td>
                                     </tr>
                                 <% }) %>
