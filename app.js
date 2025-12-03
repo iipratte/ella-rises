@@ -74,11 +74,11 @@ app.get("/signup", (req, res) => {
 });
 
 app.post('/signup', async (req, res) => {
-    // Update 1: Destructure 'dob' instead of 'userdob'
-    const { username, password, firstname, lastname, dob, email, phone, city, state, zip } = req.body;
+    // We get 'userdob' from the HTML form
+    const { username, password, firstname, lastname, userdob, email, phone, city, state, zip, isParent, school, interest } = req.body;
 
     try {
-        // Check for existing user...
+        // 1. Check if user already exists
         const existingUser = await knex('users')
             .where('email', email.toLowerCase())
             .orWhere('username', username.toLowerCase())
@@ -87,41 +87,85 @@ app.post('/signup', async (req, res) => {
         if (existingUser) {
             return res.render('signup', {
                 error: 'An account with this email or username already exists',
-                username, password: '', firstname, lastname, dob, email, phone, city, state, zip
+                username, firstname, lastname, userdob, email, phone, city, state, zip, school, interest
             });
         }
 
-        // Update 2: Insert into 'dob' column, NOT 'userdob'
+        // 2. Insert new user
         const [newUser] = await knex('users')
             .insert({
                 username: username.toLowerCase(),
-                password: password,
+                password: password, 
                 firstname,
                 lastname,
-                dob: dob, // Insert the form value 'dob' into the DB column 'dob'
+                
+                // ✅ FIX 1: Map the form field 'userdob' to the DB column 'dob'
+                dob: userdob, 
+                
                 email: email.toLowerCase(),
                 phone,
                 city,
                 state,
-                zip
+                zip,
+                level: 'U',
+                
+                // ✅ FIX 2: Set Parent Flag (True if checked, False if not)
+                parentflag: (isParent === 'on') 
             })
             .returning('*');
 
-        // Set session...
+        // 3. Set Session
+        req.session.userEmail = newUser.email;
         req.session.username = newUser.username;
         req.session.firstName = newUser.firstname;
-        req.session.level = newUser.level || 'U';
+        req.session.level = newUser.level;
 
-        req.session.save(err => {
+        req.session.save(async (err) => {
             if (err) console.error("Session save error:", err);
-            res.redirect('/admin/dashboard');
+
+            // 🛡️ ADD THIS: Start 'try' block to catch errors
+            try {
+                // LOGIC BRANCH
+                if (isParent === 'on') {
+                    // CASE A: PARENT -> Go to Add Participant (for their child)
+                    res.redirect('/participants/add'); 
+
+                } else {
+                    // CASE B: STUDENT -> Auto-create Participant record
+                    await knex('participants').insert({
+                        username: newUser.username,
+                        participantfirstname: newUser.firstname,
+                        participantlastname: newUser.lastname,
+                        participantemail: newUser.email,
+                        participantphone: newUser.phone,
+                        
+                        // Use .dob (from database)
+                        participantdob: newUser.dob, 
+                        
+                        participantzip: newUser.zip,
+                        participantschooloremployer: school,
+                        participantfieldofinterest: interest
+                    });
+                    res.redirect('/participants');
+                }
+            } catch (innerError) {
+                // 🛡️ ADD THIS: Catch block to handle the error safely
+                console.error("Auto-participant creation failed:", innerError);
+                
+                // Render the signup page with the error message instead of crashing
+                return res.render('signup', { 
+                    error: "Account created, but failed to join Participant list automatically. (Error: " + innerError.message + ")",
+                    // Pass variables back to keep the form filled
+                    username, firstname, lastname, userdob, email, phone, city, state, zip, school, interest
+                });
+            }
         });
 
     } catch (error) {
         console.error('Signup error details:', error);
         res.render('signup', {
-            error: 'An error occurred during signup. Please try again.',
-            username, password: '', firstname, lastname, dob, email, phone, city, state, zip
+            error: 'Signup Error: ' + error.message,
+            username, firstname, lastname, userdob, email, phone, city, state, zip, school, interest
         });
     }
 });
