@@ -647,53 +647,66 @@ app.post("/milestones/delete/:pid/:mno", async (req, res) => {
     }
 });
 
-// --- DONATIONS ---
+// --- DONATION ROUTES ---
 
+// 1. Show the Donation Form
 app.get("/donate", (req, res) => {
-    res.render("donations");
+    res.render("donations", { error: null });
 });
 
+// 2. Process the Donation Form
 app.post('/donate', async (req, res) => {
     const { firstName, lastName, email, amount } = req.body;
 
     try {
-        // Logic: Find participant by email, or create new donor
-        const participant = await knex('participants').where({ ParticipantEmail: email }).first();
+        // 1. Check if participant already exists by email
+        const participant = await knex('participants').where({ participantemail: email }).first();
         let participantId;
 
         if (!participant) {
-            const result = await knex('participants').insert({
-                ParticipantFirstName: firstName,
-                ParticipantLastName: lastName,
-                ParticipantEmail: email,
-                ParticipantRole: 'Donor'
-            }).returning('ParticipantID');
+            // 2. If participant doesn't exist, create a new record
+            // CHANGE: Role is now set to 'Participant' instead of 'Donor'
+            const [result] = await knex('participants').insert({
+                participantfirstname: firstName,
+                participantlastname: lastName,
+                participantemail: email.toLowerCase(),
+                participantrole: 'participant' 
+            }).returning('participantid');
             
-            participantId = result[0].ParticipantID || result[0]; 
+            // Handle Postgres returning an object or just the ID
+            participantId = result.participantid || result; 
         } else {
-            participantId = participant.ParticipantID;
+            participantId = participant.participantid;
         }
         
+        // 3. Log the donation transaction
         await knex('donations').insert({
-            ParticipantID: participantId,
-            DonationDate: new Date(),
-            DonationAmount: amount
+            participantid: participantId,
+            donationdate: new Date(),
+            donationamount: parseFloat(amount)
         });
 
         res.redirect('/thankyou');
 
     } catch (err) {
         console.error('Donation processing error:', err);
-        res.render('donations', { error: 'Error processing donation. Please try again.' });
+        res.render('donations', { 
+            error: 'Error processing donation. Please check your data.',
+            firstName, lastName, email, amount
+        });
     }
 });
 
+// --- ADMIN DONATION HISTORY (Updated for Sorting Fix) ---
+
 app.get("/admin/donations", async (req, res) => {
+    // 1. Security: Strict Manager Check
     if (!req.session.username || req.session.level !== 'M') {
         return res.redirect('/');
     }
 
     try {
+        // 2. Fetch Donations with Donor Names
         const donations = await knex('donations')
             .join('participants', 'donations.participantid', '=', 'participants.participantid')
             .select(
@@ -704,10 +717,13 @@ app.get("/admin/donations", async (req, res) => {
                 'participants.participantlastname',
                 'participants.participantemail'
             )
-            // Sort by date descending, but force NULL dates to the bottom
+            // FIX: Sort by date descending, forcing NULL dates to the bottom
             .orderByRaw('donations.donationdate DESC NULLS LAST');
 
+        // 3. Render the specific history view
+        // Note: The EJS file should now be named admin/donationHistory.ejs since you moved admin views
         res.render("admin/donationHistory", { donations });
+
     } catch (err) {
         console.error("Error fetching donation history:", err);
         res.render("admin/donationHistory", { donations: [] });
