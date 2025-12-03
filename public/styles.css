@@ -70,7 +70,9 @@ h1 { letter-spacing: -1px; } /* Tighter letter spacing for big headers */
     transition: transform 0.5s ease-out; 
     
     /* ADDED PADDING HERE */
-    padding: 4px; 
+    padding: 4px;
+    padding-left: 15px;
+    padding-right: 20px;
     padding-bottom: 7px;
 
     /* FIX: Alignment & Center Stability */
