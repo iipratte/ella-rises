@@ -789,7 +789,7 @@ app.get("/account", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
-        const user = await knex('users').where({ id: req.session.userId }).first();
+        const user = await knex('users').where({ username: req.session.username }).first();
         res.render("account", { user, success: req.query.success });
     } catch (err) {
         console.error("Error fetching account:", err);
@@ -797,15 +797,50 @@ app.get("/account", async (req, res) => {
     }
 });
 
-// 2. Process Account Update
 app.post("/account", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     const { username, firstname, lastname, userdob, email, phone, city, state, zip, password } = req.body;
 
     try {
+        // Get current user first
+        const currentUser = await knex('users').where({ username: req.session.username }).first();
+        
+        if (!currentUser) {
+            console.log("Current user not found");
+            return res.redirect('/login');
+        }
+
+        // Check if new username is taken by someone else
+        if (username.toLowerCase() !== currentUser.username.toLowerCase()) {
+            const existingUsername = await knex('users')
+                .where({ username: username.toLowerCase() })
+                .first();
+            
+            if (existingUsername) {
+                return res.render("account", { 
+                    user: req.body,
+                    error: "Username is already taken." 
+                });
+            }
+        }
+
+        // Check if new email is taken by someone else
+        if (email.toLowerCase() !== currentUser.email.toLowerCase()) {
+            const existingEmail = await knex('users')
+                .where({ email: email.toLowerCase() })
+                .whereNot({ username: currentUser.username })
+                .first();
+            
+            if (existingEmail) {
+                return res.render("account", { 
+                    user: req.body,
+                    error: "Email is already taken." 
+                });
+            }
+        }
+
         const updateData = {
-            username: username.toLowerCase(),
             firstname,
             lastname,
             userdob,
@@ -821,21 +856,32 @@ app.post("/account", async (req, res) => {
             updateData.password = password; 
         }
 
-        await knex('users')
-            .where({ id: req.session.userId })
-            .update(updateData);
+        // If username is changing, we need to handle it differently
+        if (username.toLowerCase() !== currentUser.username.toLowerCase()) {
+            // Delete old record and insert new one with new username
+            await knex.transaction(async (trx) => {
+                const userData = { ...currentUser, ...updateData, username: username.toLowerCase() };
+                await trx('users').where({ username: currentUser.username }).del();
+                await trx('users').insert(userData);
+            });
+        } else {
+            // Just update the existing record
+            await knex('users')
+                .where({ username: currentUser.username })
+                .update(updateData);
+        }
 
-        // Update session variables if they changed their name/username
-        req.session.username = updateData.username;
+        // Update session variables
+        req.session.username = username.toLowerCase();
         req.session.firstName = updateData.firstname;
 
         res.redirect('/account?success=true');
 
     } catch (err) {
-        console.error("Error updating account:", err);
+        console.error("Error updating account - Full error:", err);
         res.render("account", { 
-            user: { ...req.body, id: req.session.userId }, // Send back form data so they don't lose it
-            error: "Error updating account. Username or Email might already be taken." 
+            user: req.body,
+            error: "Error updating account. Please try again." 
         });
     }
 });
