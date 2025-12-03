@@ -201,21 +201,30 @@ app.get("/admin/dashboard", (req, res) => {
     res.render("admin/dashboard");
 });
 
-// --- ACCOUNT MANAGEMENT (NEW) ---
+// --- ACCOUNT MANAGEMENT ROUTES ---
 
 // 1. Show Account Page
 app.get("/account", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
-        // Fetch user details using username
+        // 1. Fetch User Details
         const user = await knex('users').where({ username: req.session.username }).first();
         
-        // Data Mapping Fixes for Header/View
+        // 2. Fetch Linked Participant Details (for School/Interest fields)
+        const participant = await knex('participants').where({ username: req.session.username }).first();
+
+        // Data Mapping for Header/View
         user.firstName = user.firstname; 
         user.role = user.level === 'M' ? 'Manager' : 'User';
 
-        res.render("account", { user, success: req.query.success });
+        // Pass both user and participant to the view
+        res.render("account", { 
+            user, 
+            participant: participant || {}, // Pass empty object if no participant record exists
+            success: req.query.success 
+        });
+
     } catch (err) {
         console.error("Error fetching account:", err);
         res.redirect('/admin/dashboard');
@@ -226,51 +235,48 @@ app.get("/account", async (req, res) => {
 app.post("/account", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
-    const { username, firstname, lastname, userdob, email, phone, city, state, zip, password } = req.body;
+    const { 
+        username, firstname, lastname, userdob, email, phone, 
+        city, state, zip, password, 
+        schoolOrEmployer, fieldOfInterest // New fields from form
+    } = req.body;
 
     try {
-        // Get current user first to check logic
+        // Get current user to check ID/ParentFlag
         const currentUser = await knex('users').where({ username: req.session.username }).first();
         
         if (!currentUser) {
             return res.redirect('/login');
         }
 
-        // 1. Uniqueness Check: Username
+        // --- Uniqueness Checks (Username/Email) ---
         if (username.toLowerCase() !== currentUser.username.toLowerCase()) {
-            const existingUsername = await knex('users')
-                .where({ username: username.toLowerCase() })
-                .first();
-            
+            const existingUsername = await knex('users').where({ username: username.toLowerCase() }).first();
             if (existingUsername) {
                 return res.render("account", { 
-                    user: req.body,
+                    user: req.body, 
+                    participant: { participantschooloremployer: schoolOrEmployer, participantfieldofinterest: fieldOfInterest },
                     error: "Username is already taken." 
                 });
             }
         }
-
-        // 2. Uniqueness Check: Email
         if (email.toLowerCase() !== currentUser.email.toLowerCase()) {
-            const existingEmail = await knex('users')
-                .where({ email: email.toLowerCase() })
-                .whereNot({ username: currentUser.username }) // Ignore self
-                .first();
-            
+            const existingEmail = await knex('users').where({ email: email.toLowerCase() }).whereNot({ username: currentUser.username }).first();
             if (existingEmail) {
                 return res.render("account", { 
-                    user: req.body,
+                    user: req.body, 
+                    participant: { participantschooloremployer: schoolOrEmployer, participantfieldofinterest: fieldOfInterest },
                     error: "Email is already taken." 
                 });
             }
         }
 
-        // 3. Prepare Update Data
-        const updateData = {
+        // --- 1. Update USERS Table ---
+        const userUpdateData = {
             username: username.toLowerCase(),
             firstname,
             lastname,
-            userdob,
+            dob: userdob, // Map form 'userdob' to DB 'dob'
             email: email.toLowerCase(),
             phone,
             city,
@@ -278,27 +284,36 @@ app.post("/account", async (req, res) => {
             zip
         };
 
-        // Only update password if provided
         if (password && password.trim() !== "") {
-            updateData.password = password; 
+            userUpdateData.password = password; 
         }
 
-        // 4. Perform Update
-        // Uses the *current* session username to find the record to update
         await knex('users')
             .where({ username: currentUser.username }) 
-            .update(updateData);
+            .update(userUpdateData);
 
-        // 5. Update Session Data
-        req.session.username = updateData.username;
-        req.session.firstName = updateData.firstname;
+        // --- 2. Update PARTICIPANTS Table (If not a parent) ---
+        // We check the flag on the currentUser we fetched at the start
+        if (currentUser.parentflag === false || currentUser.parentflag === 0 || currentUser.parentflag === 'f') {
+            await knex('participants')
+                .where({ username: userUpdateData.username }) // Use new username in case it changed (assuming cascade worked or transaction)
+                .update({
+                    participantschooloremployer: schoolOrEmployer,
+                    participantfieldofinterest: fieldOfInterest
+                });
+        }
+
+        // Update Session
+        req.session.username = userUpdateData.username;
+        req.session.firstName = userUpdateData.firstname;
 
         res.redirect('/account?success=true');
 
     } catch (err) {
         console.error("Error updating account:", err);
         res.render("account", { 
-            user: req.body,
+            user: req.body, 
+            participant: { participantschooloremployer: schoolOrEmployer, participantfieldofinterest: fieldOfInterest },
             error: "Error updating account. Please try again." 
         });
     }

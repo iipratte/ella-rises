@@ -42,6 +42,25 @@
                         </div>
                     </div>
 
+                    <% if (user.parentflag === false || user.parentflag === 0 || user.parentflag === 'f') { %>
+                        <h6 class="text-uppercase text-muted fw-bold mb-3 small">Participant Details</h6>
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label for="schoolOrEmployer" class="form-label fw-bold">School or Employer</label>
+                                <input type="text" class="form-control" id="schoolOrEmployer" name="schoolOrEmployer" 
+                                       value="<%= (typeof participant !== 'undefined' ? participant.participantschooloremployer : '') %>" 
+                                       placeholder="e.g. UVU or Local Business">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="fieldOfInterest" class="form-label fw-bold">Field of Interest</label>
+                                <input type="text" class="form-control" id="fieldOfInterest" name="fieldOfInterest" 
+                                       value="<%= (typeof participant !== 'undefined' ? participant.participantfieldofinterest : '') %>" 
+                                       placeholder="e.g. STEM, Arts, Leadership">
+                            </div>
+                        </div>
+                        <hr class="my-4 text-muted opacity-25">
+                    <% } %>
+
                     <h6 class="text-uppercase text-muted fw-bold mb-3 small">Personal Details</h6>
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -69,8 +88,10 @@
                         <label for="userdob" class="form-label">Date of Birth</label>
                         <% 
                             let dobValue = '';
-                            if (user.userdob) {
-                                const d = new Date(user.userdob);
+                            // Handle both 'dob' (DB column) and 'userdob' (possible alias)
+                            let rawDob = user.dob || user.userdob;
+                            if (rawDob) {
+                                const d = new Date(rawDob);
                                 dobValue = d.toISOString().split('T')[0];
                             }
                         %>
