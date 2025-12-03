@@ -6,7 +6,9 @@ const path = require("path");
 const app = express();
 const port = process.env.PORT || 3000;
 
-// --- 1. APP CONFIGURATION ---
+// =========================================
+// 1. APP CONFIGURATION
+// =========================================
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
@@ -15,29 +17,36 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// --- 2. DATABASE CONNECTION (Knex) ---
+// =========================================
+// 2. DATABASE CONNECTION (Knex)
+// =========================================
 const knex = require("knex")({
-  client: "pg",
-  connection: {
-    host: process.env.RDS_HOSTNAME || "localhost",
-    user: process.env.RDS_USERNAME || "postgres",
-    password: process.env.RDS_PASSWORD || "YLj13cO1",
-    database: process.env.RDS_DB_NAME || "ebdb",
-    port: process.env.RDS_PORT || 5432,
-    ssl: process.env.DB_SSL ? { rejectUnauthorized: false } : false // Force SSL
-  }
+    client: "pg",
+    connection: {
+        host: process.env.RDS_HOSTNAME || "localhost",
+        user: process.env.RDS_USERNAME || "postgres",
+        password: process.env.RDS_PASSWORD || "YLj13cO1",
+        database: process.env.RDS_DB_NAME || "ebdb",
+        port: process.env.RDS_PORT || 5432,
+        ssl: process.env.DB_SSL ? { rejectUnauthorized: false } : false // Force SSL if env var set
+    }
 });
 
-// --- 3. SESSION SETUP ---
+// =========================================
+// 3. SESSION SETUP
+// =========================================
 app.use(session({
     secret: process.env.SESSION_SECRET || 'fallback-secret-key',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } // Set to true if you switch to HTTPS
+    cookie: { secure: false } // Set to true if hosting on HTTPS
 }));
 
-// --- 4. GLOBAL USER MIDDLEWARE ---
+// =========================================
+// 4. GLOBAL USER MIDDLEWARE
+// =========================================
 app.use((req, res, next) => {
+    // Make user data available to all EJS templates
     if (req.session && req.session.username) {
         res.locals.user = {
             username: req.session.username,
@@ -50,48 +59,43 @@ app.use((req, res, next) => {
     next();
 });
 
-// --- 5. ROUTES ---
+// =========================================
+// 5. PUBLIC ROUTES
+// =========================================
 
-// Public Pages
+// Landing Page
 app.get("/", (req, res) => {
     res.render("index");
 });
 
+// --- SIGNUP ROUTES ---
 app.get("/signup", (req, res) => {
     res.render("signup");
 });
 
 app.post('/signup', async (req, res) => {
     const { username, password, firstname, lastname, userdob, email, phone, city, state, zip } = req.body;
- 
+
     try {
-        // Check if user already exists (by email or username)
+        // 1. Check if user already exists (by email or username)
         const existingUser = await knex('users')
             .where('email', email.toLowerCase())
             .orWhere('username', username.toLowerCase())
             .first();
- 
+
         if (existingUser) {
             return res.render('signup', {
                 error: 'An account with this email or username already exists',
-                username,
-                password: '',
-                firstname,
-                lastname,
-                userdob,
-                email,
-                phone,
-                city,
-                state,
-                zip
+                username, password: '', firstname, lastname, userdob, email, phone, city, state, zip
             });
         }
- 
-        // Insert new user into database (plain password)
+
+        // 2. Insert new user into database
+        // Note: Returning '*' helps us get the data back immediately
         const [newUser] = await knex('users')
             .insert({
                 username: username.toLowerCase(),
-                password: password,  // Plain text
+                password: password, // Plain text (per your setup)
                 firstname,
                 lastname,
                 userdob,
@@ -102,125 +106,29 @@ app.post('/signup', async (req, res) => {
                 zip
             })
             .returning('*');
- 
-        // Set up session
-        req.session.userId = newUser.id;
+
+        // 3. Set Session Variables (No User ID used)
         req.session.userEmail = newUser.email;
         req.session.username = newUser.username;
- 
-        req.session.firstName = newUser.firstname; 
-        req.session.level = 'U';
-        
-        res.redirect('/dashboard');
- 
-    } catch (error) {
-        console.error('Signup error details:', {
-            message: error.message,
-            code: error.code,
-            constraint: error.constraint,
-            table: error.table,
-            stack: error.stack
+        req.session.firstName = newUser.firstname;
+        req.session.level = newUser.level || 'U'; // Default to User
+
+        // 4. Save and Redirect
+        req.session.save(err => {
+            if (err) console.error("Session save error:", err);
+            res.redirect('/dashboard');
         });
+
+    } catch (error) {
+        console.error('Signup error details:', error);
         res.render('signup', {
             error: 'An error occurred during signup. Please try again.',
-            username,
-            password: '',
-            firstname,
-            lastname,
-            userdob,
-            email,
-            phone,
-            city,
-            state,
-            zip
+            username, password: '', firstname, lastname, userdob, email, phone, city, state, zip
         });
     }
-});
-
-
-
-// --- DONATION ROUTES ---
-
-// 1. Show the Donation Form
-app.get("/donate", (req, res) => {
-    res.render("donations");
-});
-
-// 2. Process the Donation Form
-app.post('/donate', async (req, res) => {
-    const { firstName, lastName, email, amount } = req.body;
-
-    try {
-        const participant = await knex('participants').where({ ParticipantEmail: email }).first();
-        let participantId;
-
-        if (!participant) {
-            const result = await knex('participants').insert({
-                ParticipantFirstName: firstName,
-                ParticipantLastName: lastName,
-                ParticipantEmail: email,
-                ParticipantRole: 'Donor'
-            }).returning('ParticipantID');
-            
-            participantId = result[0].ParticipantID || result[0]; 
-        } else {
-            participantId = participant.ParticipantID;
-        }
-        
-        await knex('donations').insert({
-            ParticipantID: participantId,
-            DonationDate: new Date(),
-            DonationAmount: amount
-        });
-
-        res.redirect('/thankyou');
-
-    } catch (err) {
-        console.error('Donation processing error:', err);
-        res.render('donations', { error: 'Error processing donation. Please try again.' });
-    }
-});
-
-// --- ADMIN DONATION HISTORY ---
-
-app.get("/admin/donations", async (req, res) => {
-    // 1. Security: Strict Manager Check
-    if (!req.session.username || req.session.level !== 'M') {
-        return res.redirect('/');
-    }
-
-    try {
-        // 2. Fetch Donations with Donor Names
-        // We join 'donations' with 'participants' so we see names, not just IDs
-        const donations = await knex('donations')
-            .join('participants', 'donations.participantid', '=', 'participants.participantid')
-            .select(
-                'donations.donationid',
-                'donations.donationamount',
-                'donations.donationdate',
-                'participants.participantfirstname',
-                'participants.participantlastname',
-                'participants.participantemail'
-            )
-            .orderBy('donations.donationdate', 'desc'); // Newest first
-
-        // 3. Render the specific history view you created
-        res.render("donationHistory", { donations });
-
-    } catch (err) {
-        console.error("Error fetching donation history:", err);
-        // If the table is missing, show empty list so it doesn't crash
-        res.render("donationHistory", { donations: [] });
-    }
-});
-
-// 3. Thank You Page
-app.get("/thankyou", (req, res) => {
-    res.render("thankyou");
 });
 
 // --- LOGIN ROUTES ---
-
 app.get("/login", (req, res) => {
     res.render("login");
 });
@@ -228,20 +136,18 @@ app.get("/login", (req, res) => {
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
-    // --- 🚨 BACKDOOR (DELETE BEFORE SUBMISSION) 🚨 ---
+    // --- 🚨 BACKDOOR (FOR TESTING) 🚨 ---
     if (username === 'admin' && password === 'test') {
-        req.session.userId = 888;
         req.session.username = 'Admin';
         req.session.firstName = 'AdminName';
-        req.session.level = 'M'; 
-        return res.redirect('/dashboard'); 
+        req.session.level = 'M';
+        return res.redirect('/dashboard');
     }
     if (username === 'user' && password === 'test') {
-        req.session.userId = 999;
         req.session.username = 'Visitor';
         req.session.firstName = 'VisitorName';
-        req.session.level = 'U'; 
-        return res.redirect('/'); 
+        req.session.level = 'U';
+        return res.redirect('/');
     }
     // --- 🚨 END BACKDOOR 🚨 ---
 
@@ -250,22 +156,28 @@ app.post('/login', async (req, res) => {
             return res.render('login', { error: 'Username and password are required.' });
         }
 
-        const user = await knex('users').where({ username }).first();
+        // Fetch user by username
+        const user = await knex('users').where({ username: username.toLowerCase() }).first();
 
         if (!user || user.password !== password) {
             return res.render('login', { error: 'Invalid username or password.' });
         }
 
-        req.session.userId = user.id;
+        // Set Session (No User ID used)
         req.session.username = user.username;
         req.session.firstName = user.firstname;
         req.session.level = user.level;
 
-        if (req.session.level === 'M') {
-            return res.redirect('/dashboard');
-        } else {
-            return res.redirect('/');
-        }
+        req.session.save(err => {
+            if (err) console.error("Session save error:", err);
+            
+            // Redirect based on role
+            if (req.session.level === 'M') {
+                res.redirect('/dashboard');
+            } else {
+                res.redirect('/');
+            }
+        });
 
     } catch (err) {
         console.error('Login error:', err);
@@ -280,21 +192,131 @@ app.get('/logout', (req, res) => {
     });
 });
 
-// --- PROTECTED DATA ROUTES ---
+// =========================================
+// 6. PROTECTED USER ROUTES
+// =========================================
 
 app.get("/dashboard", (req, res) => {
     if (!req.session.username) return res.redirect('/login');
+    // Security Check: Only Managers can access dashboard
     if (req.session.level !== 'M') return res.redirect('/');
     res.render("dashboard");
 });
 
-// --- PARTICIPANT ROUTES ---
+// --- ACCOUNT MANAGEMENT (NEW) ---
+
+// 1. Show Account Page
+app.get("/account", async (req, res) => {
+    if (!req.session.username) return res.redirect('/login');
+
+    try {
+        // Fetch user details using username
+        const user = await knex('users').where({ username: req.session.username }).first();
+        
+        // Data Mapping Fixes for Header/View
+        user.firstName = user.firstname; 
+        user.role = user.level === 'M' ? 'Manager' : 'User';
+
+        res.render("account", { user, success: req.query.success });
+    } catch (err) {
+        console.error("Error fetching account:", err);
+        res.redirect('/dashboard');
+    }
+});
+
+// 2. Process Account Update
+app.post("/account", async (req, res) => {
+    if (!req.session.username) return res.redirect('/login');
+
+    const { username, firstname, lastname, userdob, email, phone, city, state, zip, password } = req.body;
+
+    try {
+        // Get current user first to check logic
+        const currentUser = await knex('users').where({ username: req.session.username }).first();
+        
+        if (!currentUser) {
+            return res.redirect('/login');
+        }
+
+        // 1. Uniqueness Check: Username
+        if (username.toLowerCase() !== currentUser.username.toLowerCase()) {
+            const existingUsername = await knex('users')
+                .where({ username: username.toLowerCase() })
+                .first();
+            
+            if (existingUsername) {
+                return res.render("account", { 
+                    user: req.body,
+                    error: "Username is already taken." 
+                });
+            }
+        }
+
+        // 2. Uniqueness Check: Email
+        if (email.toLowerCase() !== currentUser.email.toLowerCase()) {
+            const existingEmail = await knex('users')
+                .where({ email: email.toLowerCase() })
+                .whereNot({ username: currentUser.username }) // Ignore self
+                .first();
+            
+            if (existingEmail) {
+                return res.render("account", { 
+                    user: req.body,
+                    error: "Email is already taken." 
+                });
+            }
+        }
+
+        // 3. Prepare Update Data
+        const updateData = {
+            username: username.toLowerCase(),
+            firstname,
+            lastname,
+            userdob,
+            email: email.toLowerCase(),
+            phone,
+            city,
+            state,
+            zip
+        };
+
+        // Only update password if provided
+        if (password && password.trim() !== "") {
+            updateData.password = password; 
+        }
+
+        // 4. Perform Update
+        // Uses the *current* session username to find the record to update
+        await knex('users')
+            .where({ username: currentUser.username }) 
+            .update(updateData);
+
+        // 5. Update Session Data
+        req.session.username = updateData.username;
+        req.session.firstName = updateData.firstname;
+
+        res.redirect('/account?success=true');
+
+    } catch (err) {
+        console.error("Error updating account:", err);
+        res.render("account", { 
+            user: req.body,
+            error: "Error updating account. Please try again." 
+        });
+    }
+});
+
+// =========================================
+// 7. DATA MANAGEMENT ROUTES
+// =========================================
+
+// --- PARTICIPANTS ---
 
 app.get("/participants", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
-        // 1. Fetch participants (Corrected Schema)
+        // 1. Fetch participants (New Schema)
         const participants = await knex('participants')
             .select(
                 'participantid',
@@ -302,7 +324,7 @@ app.get("/participants", async (req, res) => {
                 'participantschooloremployer',
                 'participantfieldofinterest'
             )
-            .orderBy('username', 'asc'); // Sorted by username since lastname doesn't exist
+            .orderBy('username', 'asc');
 
         // 2. Fetch milestone counts separately
         const milestoneCounts = await knex('milestones')
@@ -310,9 +332,8 @@ app.get("/participants", async (req, res) => {
             .count('milestoneno as count')
             .groupBy('participantid');
 
-        // 3. Merge counts in JavaScript (Avoids Type Mismatch)
+        // 3. Merge counts in JavaScript (Avoids DB type mismatch)
         participants.forEach(p => {
-            // loose comparison (==) handles int vs string ID mismatch
             const match = milestoneCounts.find(m => m.participantid == p.participantid);
             p.milestone_count = match ? match.count : 0;
         });
@@ -326,21 +347,27 @@ app.get("/participants", async (req, res) => {
 });
 
 // GET Add Form
-app.get("/participants/add", (req, res) => {
+app.get("/participants/add", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') {
         return res.redirect('/participants');
     }
-    // Note: You may need to update 'addParticipant.ejs' to match these new fields later
-    res.render("addParticipant");
+    
+    try {
+        // Fetch all users to populate the dropdown
+        const users = await knex('users').select('username').orderBy('username');
+        res.render("addParticipant", { users });
+    } catch (err) {
+        console.error("Error fetching users for dropdown:", err);
+        res.render("addParticipant", { users: [] });
+    }
 });
 
-// POST Add Form (Updated for new schema)
+// POST Add Form
 app.post("/participants/add", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') {
         return res.redirect('/');
     }
 
-    // Expecting these fields from your form now
     const { username, schoolOrEmployer, fieldOfInterest } = req.body;
 
     try {
@@ -352,7 +379,7 @@ app.post("/participants/add", async (req, res) => {
         res.redirect('/participants');
     } catch (err) {
         console.error("Error adding participant:", err);
-        res.send("Error adding participant. Check server logs.");
+        res.send("Error adding participant. Check if User exists.");
     }
 });
 
@@ -364,7 +391,7 @@ app.get("/participants/edit/:id", async (req, res) => {
         const participant = await knex('participants').where({ participantid: req.params.id }).first();
         if (!participant) return res.redirect('/participants');
         
-        // Ensure you create/update 'editParticipant.ejs' to have inputs for username, school, interest
+        // Reuse 'editParticipant.ejs' (ensure file exists)
         res.render("editParticipant", { participant });
     } catch (err) {
         console.error("Error finding participant:", err);
@@ -372,7 +399,7 @@ app.get("/participants/edit/:id", async (req, res) => {
     }
 });
 
-// POST Edit Form (Updated for new schema)
+// POST Edit Form
 app.post("/participants/edit/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
@@ -407,7 +434,7 @@ app.post("/participants/delete/:id", async (req, res) => {
     }
 });
 
-// --- EVENT ROUTES ---
+// --- EVENTS ---
 
 app.get("/events", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
@@ -448,6 +475,7 @@ app.post("/events/add", async (req, res) => {
     const { eventName, eventType, eventDescription, eventDate, eventLocation } = req.body;
 
     try {
+        // Insert basic info
         const result = await knex('events').insert({
             eventname: eventName,
             eventtype: eventType,
@@ -456,6 +484,7 @@ app.post("/events/add", async (req, res) => {
 
         const newEventId = result[0].eventid || result[0];
 
+        // Insert schedule info
         await knex('event_schedule').insert({
             eventid: newEventId,
             eventdatetimestart: eventDate,
@@ -470,10 +499,9 @@ app.post("/events/add", async (req, res) => {
     }
 });
 
-// --- SURVEY ROUTES (CLEANED) ---
+// --- SURVEYS ---
 
 app.get("/surveys", (req, res) => {
-    // Redirects any traffic trying to reach the plural URL to the official singular URL
     res.redirect("/survey"); 
 });
 
@@ -481,53 +509,41 @@ app.get("/survey", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
-        // Fetch event names for dropdown
         const events = await knex('events').select('eventname').orderBy('eventname');
-        
-        // RENDER 'surveys.ejs' (The form file)
         res.render("surveys", { events });
-        
     } catch (err) {
         console.error("Error fetching events:", err);
-        // Fallback if DB fails
         const dummyEvents = [{ eventname: 'General Program' }];
         res.render("surveys", { events: dummyEvents });
     }
 });
 
-// 2. SUBMIT THE FORM
 app.post("/survey/submit", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     const { eventName, satisfaction, usefulness, comments } = req.body;
 
     try {
-        // Insert into DB
         await knex('survey_responses').insert({
             event_name: eventName,
             satisfaction_score: satisfaction,
             usefulness_score: usefulness, 
             comments: comments
         });
-
         res.redirect('/thankyou');
-
     } catch (err) {
         console.error("Survey submit error:", err);
-        // On error, redirect back to form
         res.redirect('/survey');
     }
 });
 
-// 3. ADMIN VIEW RESPONSES (Manager Only)
 app.get("/admin/survey-data", async (req, res) => {
-    // Strict Manager Check
     if (!req.session.username || req.session.level !== 'M') {
         return res.redirect('/');
     }
 
     try {
-        const responses = await knex('survey_responses').select('*').orderBy('response_id', 'desc'); // check your primary key name
+        const responses = await knex('survey_responses').select('*').orderBy('response_id', 'desc');
         res.render("surveyResponses", { responses });
     } catch (err) {
         console.error("Error fetching responses:", err);
@@ -535,27 +551,29 @@ app.get("/admin/survey-data", async (req, res) => {
     }
 });
 
-// --- OTHER DATA ROUTES ---
+// --- MILESTONES ---
 
-// 1. VIEW MILESTONE MANAGEMENT PAGE (Manager Only)
 app.get("/milestones", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
     try {
-        // 1. Fetch all participants
-        const participants = await knex('participants')
-            .orderBy('participantlastname', 'asc');
+        // Fetch participants and milestones separately to avoid join issues
+        const participants = await knex('participants').orderBy('participantlastname', 'asc').catch(() => []);
+        
+        // Fallback for participants list if sorting by lastname fails (due to schema change)
+        // We use the one from /participants logic if the above fails
+        const safeParticipants = participants.length > 0 ? participants : await knex('participants').orderBy('username', 'asc');
 
-        // 2. Fetch all milestones (using correct column names from your image)
         const milestones = await knex('milestones')
             .select('milestoneno', 'participantid', 'milestonetitle', 'milestonedate', 'milestonenotes')
             .orderBy('milestonedate', 'desc');
 
-        // 3. Combine them: Attach milestones to each participant object
-        const participantsWithMilestones = participants.map(p => {
+        // Combine logic
+        const participantsWithMilestones = safeParticipants.map(p => {
             return {
                 ...p,
-                milestones: milestones.filter(m => m.participantid === p.participantid)
+                // loose comparison for ID types
+                milestones: milestones.filter(m => m.participantid == p.participantid) 
             };
         });
 
@@ -567,9 +585,6 @@ app.get("/milestones", async (req, res) => {
     }
 });
 
-// --- MILESTONE DETAIL & MAINTENANCE ROUTES ---
-
-// 2. VIEW DETAILS (Specific Participant's History)
 app.get("/milestones/view/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
@@ -577,59 +592,45 @@ app.get("/milestones/view/:id", async (req, res) => {
 
     try {
         const participant = await knex('participants').where({ participantid: pid }).first();
-        
-        // Updated to use 'milestonedate' and 'milestoneno'
         const milestones = await knex('milestones')
             .where({ participantid: pid })
             .orderBy('milestonedate', 'desc');
 
         res.render("milestoneDetails", { participant, milestones });
-
     } catch (err) {
         console.error("Error fetching detail:", err);
         res.redirect('/milestones');
     }
 });
 
-// 3. SHOW ADD FORM
 app.get("/milestones/add/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
     
     const pid = req.params.id;
     const participant = await knex('participants').where({ participantid: pid }).first();
-    
     res.render("addMilestone", { participant });
 });
 
-// 4. PROCESS ADD FORM
 app.post("/milestones/add/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
     const pid = req.params.id;
-    // Note: 'milestoneno' is likely an integer. 
-    // If it's not auto-incrementing in DB, you might need to calculate the next number here.
-    // Assuming DB handles it or you input it manually. 
     const { milestoneTitle, milestoneDate, notes } = req.body;
 
     try {
         await knex('milestones').insert({
             participantid: pid,
-            milestonetitle: milestoneTitle, // Corrected column
-            milestonedate: milestoneDate,   // Corrected column
-            milestonenotes: notes          // Corrected column
+            milestonetitle: milestoneTitle,
+            milestonedate: milestoneDate,
+            milestonenotes: notes
         });
-
         res.redirect(`/milestones/view/${pid}`);
-
     } catch (err) {
         console.error("Error creating milestone:", err);
-        res.send("Error adding milestone. Check DB constraints.");
+        res.send("Error adding milestone.");
     }
 });
 
-// 5. DELETE MILESTONE 
-// NOTE: Because your table uses a Composite PK (milestoneno + participantid), 
-// we need both to delete safely.
 app.post("/milestones/delete/:pid/:mno", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
     
@@ -637,9 +638,8 @@ app.post("/milestones/delete/:pid/:mno", async (req, res) => {
 
     try {
         await knex('milestones')
-            .where({ participantid: pid, milestoneno: mno }) // Match both keys
+            .where({ participantid: pid, milestoneno: mno })
             .del();
-        
         res.redirect(`/milestones/view/${pid}`);
     } catch(err) {
         console.error("Delete error", err);
@@ -647,38 +647,85 @@ app.post("/milestones/delete/:pid/:mno", async (req, res) => {
     }
 });
 
+// --- DONATIONS ---
 
-app.get("/donations", (req, res) => {
-    // Check if user is logged in
-        knex.select().from("users")
-            .then(users => {
-                console.log(`Successfully retrieved ${users.length} users from database`);
-                res.render("donations", {users: users});
-            })
-            .catch((err) => {
-                console.error("Database query error:", err.message);
-                res.render("donations", {
-                    users: [],
-                    error_message: `Database error: ${err.message}. Please check if the 'users' table exists.`
-                });
-            });
+app.get("/donate", (req, res) => {
+    res.render("donations");
 });
 
-// --- ADMIN ROUTES ---
+app.post('/donate', async (req, res) => {
+    const { firstName, lastName, email, amount } = req.body;
 
-app.get("/admin", (req, res) => {
-    if (req.session.level !== 'M') return res.redirect('/');
-    res.render("admin");
+    try {
+        // Logic: Find participant by email, or create new donor
+        const participant = await knex('participants').where({ ParticipantEmail: email }).first();
+        let participantId;
+
+        if (!participant) {
+            const result = await knex('participants').insert({
+                ParticipantFirstName: firstName,
+                ParticipantLastName: lastName,
+                ParticipantEmail: email,
+                ParticipantRole: 'Donor'
+            }).returning('ParticipantID');
+            
+            participantId = result[0].ParticipantID || result[0]; 
+        } else {
+            participantId = participant.ParticipantID;
+        }
+        
+        await knex('donations').insert({
+            ParticipantID: participantId,
+            DonationDate: new Date(),
+            DonationAmount: amount
+        });
+
+        res.redirect('/thankyou');
+
+    } catch (err) {
+        console.error('Donation processing error:', err);
+        res.render('donations', { error: 'Error processing donation. Please try again.' });
+    }
 });
 
-// --- USER MAINTENANCE ROUTES (Admin Only) ---
+app.get("/admin/donations", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') {
+        return res.redirect('/');
+    }
 
-// 1. LIST ALL USERS
+    try {
+        const donations = await knex('donations')
+            .join('participants', 'donations.participantid', '=', 'participants.participantid')
+            .select(
+                'donations.donationid',
+                'donations.donationamount',
+                'donations.donationdate',
+                'participants.participantfirstname',
+                'participants.participantlastname',
+                'participants.participantemail'
+            )
+            .orderBy('donations.donationdate', 'desc');
+
+        res.render("donationHistory", { donations });
+    } catch (err) {
+        console.error("Error fetching donation history:", err);
+        res.render("donationHistory", { donations: [] });
+    }
+});
+
+app.get("/thankyou", (req, res) => {
+    res.render("thankyou");
+});
+
+// =========================================
+// 8. ADMIN USER MAINTENANCE
+// =========================================
+
 app.get("/admin/users", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
     try {
-        // Ensure we order by 'id', not 'userID'
+        // List all users ordered by ID
         const users = await knex('users').select('*').orderBy('id');
         res.render("userMaintenance", { users });
     } catch (err) {
@@ -687,13 +734,11 @@ app.get("/admin/users", async (req, res) => {
     }
 });
 
-// 2. SHOW ADD USER FORM
 app.get("/admin/users/add", (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
     res.render("addUser");
 });
 
-// 3. PROCESS ADD USER
 app.post("/admin/users/add", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
@@ -703,7 +748,7 @@ app.post("/admin/users/add", async (req, res) => {
         await knex('users').insert({
             username: username.toLowerCase(),
             password, 
-            level // 'M' or 'U'
+            level
         });
         res.redirect('/admin/users');
     } catch (err) {
@@ -712,12 +757,11 @@ app.post("/admin/users/add", async (req, res) => {
     }
 });
 
-// 4. DISPLAY EDIT USER FORM (Changed :userID to :id)
 app.get("/admin/users/edit/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
     try {
-        // Changed .where({ userID: ... }) to .where({ id: ... })
+        // NOTE: Admin routes still use ID for referencing users, which is fine
         const userToEdit = await knex('users').where({ id: req.params.id }).first();
         if (!userToEdit) {
             return res.redirect('/admin/users');
@@ -729,7 +773,6 @@ app.get("/admin/users/edit/:id", async (req, res) => {
     }
 });
 
-// 5. PROCESS EDIT USER (Changed :userID to :id)
 app.post("/admin/users/edit/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
@@ -747,12 +790,10 @@ app.post("/admin/users/edit/:id", async (req, res) => {
             level
         };
         
-        // Only update password if provided
         if (password && password.trim() !== '') {
             updateData.password = password;
         }
 
-        // Changed .where({ userID: ... }) to .where({ id: ... })
         await knex('users').where({ id: req.params.id }).update(updateData);
         res.redirect('/admin/users');
     } catch (err) {
@@ -761,18 +802,19 @@ app.post("/admin/users/edit/:id", async (req, res) => {
     }
 });
 
-// 6. DELETE USER (Changed :userID to :id)
 app.post("/admin/users/delete/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
     try {
-        // Prevent deleting yourself!
-        // Changed req.params.userID to req.params.id
-        if (req.session.userId == req.params.id) {
+        // 1. Fetch user to delete first so we can check their username
+        const userToDelete = await knex('users').where({ id: req.params.id }).first();
+
+        // 2. Prevent deleting yourself
+        if (userToDelete && userToDelete.username === req.session.username) {
             return res.send("You cannot delete your own account while logged in.");
         }
 
-        // Changed .where({ userID: ... }) to .where({ id: ... })
+        // 3. Delete
         await knex('users').where({ id: req.params.id }).del();
         res.redirect('/admin/users');
     } catch (err) {
@@ -781,121 +823,12 @@ app.post("/admin/users/delete/:id", async (req, res) => {
     }
 });
 
+// Easter Egg
 app.get("/teapot", (req, res) => {
     res.status(418).send("418: I'm a little Teapot (Short and stout)");
 });
 
-// --- ACCOUNT MANAGEMENT ROUTES ---
-
-// 1. Show Account Page
-app.get("/account", async (req, res) => {
-    if (!req.session.username) return res.redirect('/login');
-
-    try {
-        const user = await knex('users').where({ username: req.session.username }).first();
-        
-        // --- FIXES ---
-        // 1. Fix the Name (so "Hi, Name" works)
-        user.firstName = user.firstname; 
-        
-        // 2. Fix the Role (so the Manager Menu appears)
-        // The header checks for 'Manager', but the DB only has 'M'
-        user.role = user.level === 'M' ? 'Manager' : 'User';
-
-        res.render("account", { user, success: req.query.success });
-    } catch (err) {
-        console.error("Error fetching account:", err);
-        res.redirect('/dashboard');
-    }
-});
-
-app.post("/account", async (req, res) => {
-    if (!req.session.username) return res.redirect('/login');
-
-    const { username, firstname, lastname, userdob, email, phone, city, state, zip, password } = req.body;
-
-    try {
-        // Get current user first
-        const currentUser = await knex('users').where({ username: req.session.username }).first();
-        
-        if (!currentUser) {
-            console.log("Current user not found");
-            return res.redirect('/login');
-        }
-
-        // Check if new username is taken by someone else
-        if (username.toLowerCase() !== currentUser.username.toLowerCase()) {
-            const existingUsername = await knex('users')
-                .where({ username: username.toLowerCase() })
-                .first();
-            
-            if (existingUsername) {
-                return res.render("account", { 
-                    user: req.body,
-                    error: "Username is already taken." 
-                });
-            }
-        }
-
-        // Check if new email is taken by someone else
-        if (email.toLowerCase() !== currentUser.email.toLowerCase()) {
-            const existingEmail = await knex('users')
-                .where({ email: email.toLowerCase() })
-                .whereNot({ username: currentUser.username })
-                .first();
-            
-            if (existingEmail) {
-                return res.render("account", { 
-                    user: req.body,
-                    error: "Email is already taken." 
-                });
-            }
-        }
-
-        const updateData = {
-            firstname,
-            lastname,
-            userdob,
-            email: email.toLowerCase(),
-            phone,
-            city,
-            state,
-            zip
-        };
-
-        // Only update password if they typed something new
-        if (password && password.trim() !== "") {
-            updateData.password = password; 
-        }
-
-        // If username is changing, we need to handle it differently
-        if (username.toLowerCase() !== currentUser.username.toLowerCase()) {
-            // Delete old record and insert new one with new username
-            await knex.transaction(async (trx) => {
-                const userData = { ...currentUser, ...updateData, username: username.toLowerCase() };
-                await trx('users').where({ username: currentUser.username }).del();
-                await trx('users').insert(userData);
-            });
-        } else {
-            // Just update the existing record
-            await knex('users')
-                .where({ username: currentUser.username })
-                .update(updateData);
-        }
-
-        // Update session variables
-        req.session.username = username.toLowerCase();
-        req.session.firstName = updateData.firstname;
-
-        res.redirect('/account?success=true');
-
-    } catch (err) {
-        console.error("Error updating account - Full error:", err);
-        res.render("account", { 
-            user: req.body,
-            error: "Error updating account. Please try again." 
-        });
-    }
-});
-
+// =========================================
+// 9. SERVER START
+// =========================================
 app.listen(port, () => console.log(`Server running on port ${port}`));
