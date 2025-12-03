@@ -782,4 +782,62 @@ app.get("/teapot", (req, res) => {
     res.status(418).send("418: I'm a little Teapot (Short and stout)");
 });
 
+// --- ACCOUNT MANAGEMENT ROUTES ---
+
+// 1. Show Account Page
+app.get("/account", async (req, res) => {
+    if (!req.session.username) return res.redirect('/login');
+
+    try {
+        const user = await knex('users').where({ id: req.session.userId }).first();
+        res.render("account", { user, success: req.query.success });
+    } catch (err) {
+        console.error("Error fetching account:", err);
+        res.redirect('/dashboard');
+    }
+});
+
+// 2. Process Account Update
+app.post("/account", async (req, res) => {
+    if (!req.session.username) return res.redirect('/login');
+
+    const { username, firstname, lastname, userdob, email, phone, city, state, zip, password } = req.body;
+
+    try {
+        const updateData = {
+            username: username.toLowerCase(),
+            firstname,
+            lastname,
+            userdob,
+            email: email.toLowerCase(),
+            phone,
+            city,
+            state,
+            zip
+        };
+
+        // Only update password if they typed something new
+        if (password && password.trim() !== "") {
+            updateData.password = password; 
+        }
+
+        await knex('users')
+            .where({ id: req.session.userId })
+            .update(updateData);
+
+        // Update session variables if they changed their name/username
+        req.session.username = updateData.username;
+        req.session.firstName = updateData.firstname;
+
+        res.redirect('/account?success=true');
+
+    } catch (err) {
+        console.error("Error updating account:", err);
+        res.render("account", { 
+            user: { ...req.body, id: req.session.userId }, // Send back form data so they don't lose it
+            error: "Error updating account. Username or Email might already be taken." 
+        });
+    }
+});
+
 app.listen(port, () => console.log(`Server running on port ${port}`));

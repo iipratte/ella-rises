@@ -66,7 +66,7 @@
           <a href="/signup" class="btn btn-outline-light btn-sm">Sign Up</a>
         <% } else { %>
           <span class="navbar-text text-light">
-            Hi, <%= user.firstName %>
+            <a href="/account">Hi, <%= user.firstName %></a>
           </span>
           <a href="/logout" class="btn btn-outline-danger btn-sm">Logout</a>
         <% } %>
