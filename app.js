@@ -589,21 +589,36 @@ app.get("/admin/survey-data", async (req, res) => {
 
 // --- MILESTONES ---
 
-// 1. LIST ALL MILESTONES
+// 1. LIST ALL MILESTONES (With Search)
 app.get("/milestones", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
-    try {
-        const participants = await knex('participants').orderBy('participantlastname', 'asc').catch(() => []);
-        
-        // Robust fallback if sorting fails
-        const safeParticipants = participants.length > 0 ? participants : await knex('participants').orderBy('username', 'asc');
+    // 1. Get search params from URL
+    const { firstName, lastName } = req.query;
 
+    try {
+        // 2. Start building the query
+        let query = knex('participants').orderBy('participantlastname', 'asc');
+
+        // 3. Apply filters if user typed something
+        if (firstName) {
+            query = query.where('participantfirstname', 'ilike', `%${firstName}%`);
+        }
+        if (lastName) {
+            query = query.where('participantlastname', 'ilike', `%${lastName}%`);
+        }
+
+        // 4. Execute the filtered query
+        const participants = await query.catch(() => []);
+        
+        const safeParticipants = participants.length > 0 ? participants : [];
+
+        // 5. Fetch all milestones
         const milestones = await knex('milestones')
             .select('milestoneid', 'participantid', 'milestonetitle', 'milestonedate', 'milestonenotes')
             .orderBy('milestonedate', 'desc');
 
-        // Combine logic
+        // 6. Combine logic
         const participantsWithMilestones = safeParticipants.map(p => {
             return {
                 ...p,
@@ -611,12 +626,21 @@ app.get("/milestones", async (req, res) => {
             };
         });
 
-        // CHANGE: Render "milestones" (not "admin/milestones")
-        res.render("milestones", { participants: participantsWithMilestones });
+        // CORRECTED RENDER PATH: "milestones", not "admin/milestones"
+        res.render("milestones", { 
+            participants: participantsWithMilestones,
+            // Pass search terms back to keep inputs filled
+            searchFirstName: firstName || '',
+            searchLastName: lastName || ''
+        });
 
     } catch (err) {
         console.error("Error fetching milestones data:", err);
-        res.render("milestones", { participants: [] });
+        res.render("milestones", { 
+            participants: [], 
+            searchFirstName: '', 
+            searchLastName: '' 
+        });
     }
 });
 

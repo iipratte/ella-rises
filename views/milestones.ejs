@@ -11,6 +11,34 @@
     <div class="container mt-5 mb-5">
         <h1 class="fw-bold text-primary mb-4" style="font-family: 'DM Serif Display', serif;">Milestone Tracking</h1>
         
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body bg-white p-4">
+                <form action="/milestones" method="GET" class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label for="firstName" class="form-label fw-bold text-muted small text-uppercase">First Name</label>
+                        <input type="text" class="form-control" id="firstName" name="firstName" 
+                               value="<%= searchFirstName %>" placeholder="Search first name...">
+                    </div>
+                    <div class="col-md-5">
+                        <label for="lastName" class="form-label fw-bold text-muted small text-uppercase">Last Name</label>
+                        <input type="text" class="form-control" id="lastName" name="lastName" 
+                               value="<%= searchLastName %>" placeholder="Search last name...">
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button type="submit" class="btn btn-primary">Apply</button>
+                    </div>
+                    
+                    <% if (searchFirstName || searchLastName) { %>
+                        <div class="col-12 text-end mt-2">
+                            <a href="/milestones" class="text-decoration-none small text-danger">
+                                <i class="bi bi-x-circle"></i> Clear Filters
+                            </a>
+                        </div>
+                    <% } %>
+                </form>
+            </div>
+        </div>
+
         <div class="alert alert-info" role="alert">
             <i class="bi bi-info-circle-fill me-2"></i> 
             Click on a participant's name to view their detailed milestone history.
@@ -19,7 +47,12 @@
         <div class="accordion shadow-sm" id="milestoneAccordion">
             
             <% if (participants.length === 0) { %>
-                <div class="card p-4 text-center">No participants found.</div>
+                <div class="card p-5 text-center border-0">
+                    <h5 class="text-muted mb-3">No participants found.</h5>
+                    <% if (searchFirstName || searchLastName) { %>
+                        <p class="text-muted small">Try adjusting your search terms or <a href="/milestones">clear filters</a>.</p>
+                    <% } %>
+                </div>
             <% } else { %>
                 
                 <% participants.forEach((p, index) => { %>
@@ -61,15 +94,16 @@
                                                         <td><%= new Date(m.milestonedate).toLocaleDateString() %></td>
                                                         <td class="text-muted small"><%= m.milestonenotes || '-' %></td>
                                                         
-                                                        <td class="text-end" style="white-space: nowrap;"> <a href="/milestones/edit/<%= m.milestoneid %>" class="btn btn-sm btn-outline-secondary me-2" title="Edit">
-                                                            Edit
-                                                        </a>
-                                                        <form action="/milestones/delete/<%= m.milestoneid %>" method="POST" class="d-inline" onsubmit="return confirm('Delete this milestone?');">
-                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                                                                Delete
-                                                            </button>
-                                                        </form>
-                                                    </td>
+                                                        <td class="text-end" style="white-space: nowrap;">
+                                                            <a href="/milestones/edit/<%= m.milestoneid %>" class="btn btn-sm btn-outline-secondary me-2" title="Edit">
+                                                                Edit
+                                                            </a>
+                                                            <form action="/milestones/delete/<%= m.milestoneid %>" method="POST" class="d-inline" onsubmit="return confirm('Delete this milestone?');">
+                                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                                    Delete
+                                                                </button>
+                                                            </form>
+                                                        </td>
                                                     </tr>
                                                 <% }) %>
                                             </tbody>
