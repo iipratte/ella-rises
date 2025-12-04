@@ -853,18 +853,24 @@ app.get("/admin/donations", async (req, res) => {
     try {
         // 2. Fetch Donations with Donor Names
         const donations = await knex('donations')
-            .join('participants', 'donations.participantid', '=', 'participants.participantid')
-            .select(
-                'donations.donationid',
-                'donations.donationamount',
-                'donations.donationdate',
-                'participants.participantfirstname',
-                'participants.participantlastname',
-                'participants.participantemail'
-            )
-            // FIX: Sort by date descending, forcing NULL dates to the bottom
-            .orderByRaw('donations.donationdate DESC NULLS LAST');
-
+        .join('participants', 'donations.participantid', '=', 'participants.participantid')
+        .select(
+            'donations.donationid',
+            'donations.donationamount',
+            'donations.donationdate',
+            'participants.participantfirstname',
+            'participants.participantlastname',
+            'participants.participantemail'
+        )
+        .orderByRaw(`
+            CASE
+                WHEN donations.donationdate IS NULL THEN 2           -- nulls last
+                WHEN donations.donationdate > CURRENT_DATE THEN 1    -- future dates in middle
+                ELSE 0                                               -- past + today first
+            END,
+            donations.donationdate DESC
+        `);
+            
         // 3. Render the specific history view
         // Note: The EJS file should now be named admin/donationHistory.ejs since you moved admin views
         res.render("admin/donationHistory", { donations });
