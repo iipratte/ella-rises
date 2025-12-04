@@ -42,7 +42,7 @@
                         </div>
                     </div>
 
-                    <% if (user.parentflag === false || user.parentflag === 0 || user.parentflag === 'f') { %>
+                    <% if (!(user.role === 'Manager' || user.isAdmin) && (!user.parentflag || user.parentflag === false || user.parentflag === 0 || user.parentflag === 'f')) { %>
                         <h6 class="text-uppercase text-muted fw-bold mb-3 small">Participant Details</h6>
                         <div class="row mb-4">
                             <div class="col-md-6 mb-3">
