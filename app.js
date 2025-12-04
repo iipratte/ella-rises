@@ -633,49 +633,72 @@ app.get("/admin/survey-data", async (req, res) => {
 
 // --- MILESTONES ---
 
+// 1. LIST ALL MILESTONES (With Search)
 app.get("/milestones", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
-    try {
-        // Fetch participants and milestones separately to avoid join issues
-        const participants = await knex('participants').orderBy('participantlastname', 'asc').catch(() => []);
-        
-        // Fallback for participants list if sorting by lastname fails (due to schema change)
-        // We use the one from /participants logic if the above fails
-        const safeParticipants = participants.length > 0 ? participants : await knex('participants').orderBy('username', 'asc');
+    // 1. Get search params from URL
+    const { firstName, lastName } = req.query;
 
+    try {
+        // 2. Start building the query
+        let query = knex('participants').orderBy('participantlastname', 'asc');
+
+        // 3. Apply filters if user typed something
+        if (firstName) {
+            query = query.where('participantfirstname', 'ilike', `%${firstName}%`);
+        }
+        if (lastName) {
+            query = query.where('participantlastname', 'ilike', `%${lastName}%`);
+        }
+
+        // 4. Execute the filtered query
+        const participants = await query.catch(() => []);
+        
+        const safeParticipants = participants.length > 0 ? participants : [];
+
+        // 5. Fetch all milestones
         const milestones = await knex('milestones')
             .select('milestoneid', 'participantid', 'milestonetitle', 'milestonedate', 'milestonenotes')
             .orderBy('milestonedate', 'desc');
 
-        // Combine logic
+        // 6. Combine logic
         const participantsWithMilestones = safeParticipants.map(p => {
             return {
                 ...p,
-                // loose comparison for ID types
                 milestones: milestones.filter(m => m.participantid == p.participantid) 
             };
         });
 
-        res.render("admin/milestones", { participants: participantsWithMilestones });
+        // CORRECTED RENDER PATH: "milestones", not "admin/milestones"
+        res.render("milestones", { 
+            participants: participantsWithMilestones,
+            // Pass search terms back to keep inputs filled
+            searchFirstName: firstName || '',
+            searchLastName: lastName || ''
+        });
 
     } catch (err) {
         console.error("Error fetching milestones data:", err);
-        res.render("admin/milestones", { participants: [] });
+        res.render("milestones", { 
+            participants: [], 
+            searchFirstName: '', 
+            searchLastName: '' 
+        });
     }
 });
 
+// 2. VIEW DETAILS (Specific Participant)
 app.get("/milestones/view/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
-    const pid = req.params.id;
-
     try {
-        const participant = await knex('participants').where({ participantid: pid }).first();
+        const participant = await knex('participants').where({ participantid: req.params.id }).first();
         const milestones = await knex('milestones')
-            .where({ participantid: pid })
+            .where({ participantid: req.params.id })
             .orderBy('milestonedate', 'desc');
 
+        // Ensure this view exists in the right place (e.g., views/milestoneDetails.ejs)
         res.render("milestoneDetails", { participant, milestones });
     } catch (err) {
         console.error("Error fetching detail:", err);
@@ -683,44 +706,86 @@ app.get("/milestones/view/:id", async (req, res) => {
     }
 });
 
+// 3. ADD MILESTONE (GET)
 app.get("/milestones/add/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
     
-    const pid = req.params.id;
-    const participant = await knex('participants').where({ participantid: pid }).first();
-    res.render("addMilestone", { participant });
+    try {
+        const participant = await knex('participants').where({ participantid: req.params.id }).first();
+        res.render("addMilestone", { participant });
+    } catch (err) {
+        console.error("Error getting add form:", err);
+        res.redirect('/milestones');
+    }
 });
 
+// 4. ADD MILESTONE (POST)
 app.post("/milestones/add/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
-    const pid = req.params.id;
     const { milestoneTitle, milestoneDate, notes } = req.body;
 
     try {
         await knex('milestones').insert({
-            participantid: pid,
+            participantid: req.params.id,
             milestonetitle: milestoneTitle,
             milestonedate: milestoneDate,
             milestonenotes: notes
         });
-        res.redirect(`/milestones/view/${pid}`);
+        res.redirect('/milestones');
     } catch (err) {
         console.error("Error creating milestone:", err);
         res.send("Error adding milestone.");
     }
 });
 
-app.post("/milestones/delete/:pid/:mno", async (req, res) => {
+// 5. EDIT MILESTONE (GET) - NEW
+app.get("/milestones/edit/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
-    
-    const { pid, mno } = req.params;
+
+    try {
+        const milestone = await knex('milestones').where({ milestoneid: req.params.id }).first();
+        if (!milestone) return res.redirect('/milestones');
+
+        const participant = await knex('participants').where({ participantid: milestone.participantid }).first();
+        
+        res.render("editMilestone", { milestone, participant });
+    } catch (err) {
+        console.error("Error fetching milestone to edit:", err);
+        res.redirect('/milestones');
+    }
+});
+
+// 6. EDIT MILESTONE (POST) - NEW
+app.post("/milestones/edit/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    const { milestoneTitle, milestoneDate, notes } = req.body;
 
     try {
         await knex('milestones')
-            .where({ participantid: pid, milestoneid: mno })
-            .del();
-        res.redirect(`/milestones/view/${pid}`);
+            .where({ milestoneid: req.params.id })
+            .update({
+                milestonetitle: milestoneTitle,
+                milestonedate: milestoneDate,
+                milestonenotes: notes
+            });
+        
+        res.redirect('/milestones');
+    } catch (err) {
+        console.error("Error updating milestone:", err);
+        res.send("Error updating milestone.");
+    }
+});
+
+// 7. DELETE MILESTONE
+app.post("/milestones/delete/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    
+    try {
+        // Delete by primary key (milestoneid)
+        await knex('milestones').where({ milestoneid: req.params.id }).del();
+        res.redirect('/milestones');
     } catch(err) {
         console.error("Delete error", err);
         res.redirect('/milestones');
