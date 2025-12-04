@@ -1059,37 +1059,33 @@ app.post('/donate', async (req, res) => {
     }
 });
 
-// --- ADMIN DONATION HISTORY (Updated for Sorting Fix) ---
-
+// --- ADMIN DONATION HISTORY ---
 app.get("/admin/donations", async (req, res) => {
-    // 1. Security: Strict Manager Check
     if (!req.session.username || req.session.level !== 'M') {
         return res.redirect('/');
     }
 
     try {
-        // 2. Fetch Donations with Donor Names
+        // CHANGED: .leftJoin() allows donations to show even if participant is null
         const donations = await knex('donations')
-        .join('participants', 'donations.participantid', '=', 'participants.participantid')
-        .select(
-            'donations.donationid',
-            'donations.donationamount',
-            'donations.donationdate',
-            'participants.participantfirstname',
-            'participants.participantlastname',
-            'participants.participantemail'
-        )
-        .orderByRaw(`
-            CASE
-                WHEN donations.donationdate IS NULL THEN 2           -- nulls last
-                WHEN donations.donationdate > CURRENT_DATE THEN 1    -- future dates in middle
-                ELSE 0                                               -- past + today first
-            END,
-            donations.donationdate DESC
-        `);
+            .leftJoin('participants', 'donations.participantid', '=', 'participants.participantid')
+            .select(
+                'donations.donationid',
+                'donations.donationamount',
+                'donations.donationdate',
+                'participants.participantfirstname',
+                'participants.participantlastname',
+                'participants.participantemail'
+            )
+            .orderByRaw(`
+                CASE
+                    WHEN donations.donationdate IS NULL THEN 2
+                    WHEN donations.donationdate > CURRENT_DATE THEN 1
+                    ELSE 0
+                END,
+                donations.donationdate DESC
+            `);
             
-        // 3. Render the specific history view
-        // Note: The EJS file should now be named admin/donationHistory.ejs since you moved admin views
         res.render("admin/donationHistory", { donations });
 
     } catch (err) {
