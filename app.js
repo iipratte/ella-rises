@@ -836,51 +836,49 @@ app.get("/admin/survey-data", async (req, res) => {
 
 // 1. LIST ALL MILESTONES (With Search)
 app.get("/milestones", async (req, res) => {
-    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    // 1. Security Check
+    if (!req.session.username) {
+        return res.redirect('/login');
+    }
 
-    // 1. Get searfch params from URL
+    // 2. Get search params
     const { firstName, lastName } = req.query;
 
     try {
-        // 2. Start building the query
+        // 3. Build Query
         let query = knex('participants').orderBy('participantlastname', 'asc');
 
-        // 3. Apply filters if user typed something
-        if (firstName) {
-            query = query.where('participantfirstname', 'ilike', `%${firstName}%`);
-        }
-        if (lastName) {
-            query = query.where('participantlastname', 'ilike', `%${lastName}%`);
-        }
+        if (firstName) query = query.where('participantfirstname', 'ilike', `%${firstName}%`);
+        if (lastName) query = query.where('participantlastname', 'ilike', `%${lastName}%`);
 
-        // 4. Execute the filtered query
-        const participants = await query.catch(() => []);
+        const participants = await query;
         
-        const safeParticipants = participants.length > 0 ? participants : [];
-
-        // 5. Fetch all milestones
+        // 4. Fetch Milestones
         const milestones = await knex('milestones')
             .select('milestoneid', 'participantid', 'milestonetitle', 'milestonedate', 'milestonenotes')
             .orderBy('milestonedate', 'desc');
 
-        // 6. Combine logic
+        // 5. Combine
+        // SAFEGUARD: Ensure participants is an array
+        const safeParticipants = Array.isArray(participants) ? participants : [];
+
         const participantsWithMilestones = safeParticipants.map(p => {
             return {
                 ...p,
+                // Loose equality (==) handles string vs int ID types
                 milestones: milestones.filter(m => m.participantid == p.participantid) 
             };
         });
 
-        // CORRECTED RENDER PATH: "milestones", not "admin/milestones"
         res.render("milestones", { 
             participants: participantsWithMilestones,
-            // Pass search terms back to keep inputs filled
             searchFirstName: firstName || '',
             searchLastName: lastName || ''
         });
 
     } catch (err) {
-        console.error("Error fetching milestones data:", err);
+        console.error("Error in /milestones:", err);
+        // Render empty page on error, don't redirect
         res.render("milestones", { 
             participants: [], 
             searchFirstName: '', 
