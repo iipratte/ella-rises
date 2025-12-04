@@ -71,9 +71,10 @@
                             <div class="accordion-body bg-white">
                                 
                                 <div class="d-flex justify-content-end mb-3">
-                                    <a href="/milestones/add/<%= p.participantid %>" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-plus-lg"></i> Add New
-                                    </a>
+                                    <% if (user && user.role === 'Manager') { %>  <a href="/milestones/add/<%= p.participantid %>" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-plus-lg"></i> Add New
+                                        </a>
+                                    <% } %>
                                 </div>
 
                                 <% if (p.milestones.length > 0) { %>
@@ -84,7 +85,8 @@
                                                     <th>Title</th>
                                                     <th>Date</th>
                                                     <th>Notes</th>
-                                                    <th class="text-end">Actions</th>
+                                                    <% if (user && user.role === 'Manager') { %> <th class="text-end">Actions</th>
+                                                    <% } %>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -94,18 +96,18 @@
                                                         <td><%= new Date(m.milestonedate).toLocaleDateString() %></td>
                                                         <td class="text-muted small"><%= m.milestonenotes || '-' %></td>
                                                         
-                                                        <td class="text-end" style="white-space: nowrap;">
-                                                            <a href="/milestones/edit/<%= m.milestoneid %>" class="btn btn-sm btn-outline-secondary me-2" title="Edit">
-                                                                Edit
-                                                            </a>
-                                                            <form action="/milestones/delete/<%= m.milestoneid %>" method="POST" class="d-inline" onsubmit="return confirm('Delete this milestone?');">
-                                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                                                                    Delete
-                                                                </button>
-                                                            </form>
-                                                        </td>
-                                                    </tr>
-                                                <% }) %>
+                                                        <% if (user && user.role === 'Manager') { %> <td class="text-end" style="white-space: nowrap;">
+                                                                <a href="/milestones/edit/<%= m.milestoneid %>" class="btn btn-sm btn-outline-secondary me-2" title="Edit">
+                                                                    Edit
+                                                                </a>
+                                                                <form action="/milestones/delete/<%= m.milestoneid %>" method="POST" class="d-inline" onsubmit="return confirm('Delete this milestone?');">
+                                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                                        Delete
+                                                                    </button>
+                                                                </form>
+                                                            </td>
+                                                        <% } %>
+                                                    </tr>                                                <% }) %>
                                             </tbody>
                                         </table>
                                     </div>
