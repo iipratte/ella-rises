@@ -180,43 +180,33 @@ app.get("/login", (req, res) => {
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
-    // --- 🚨 BACKDOOR (FOR TESTING) 🚨 ---
-    if (username === 'admin' && password === 'test') {
-        req.session.username = 'Admin';
-        req.session.firstName = 'AdminName';
-        req.session.level = 'M';
-        return res.redirect('/admin/dashboard');
-    }
-    if (username === 'user' && password === 'test') {
-        req.session.username = 'Visitor';
-        req.session.firstName = 'VisitorName';
-        req.session.level = 'U';
-        return res.redirect('/');
-    }
-    // --- 🚨 END BACKDOOR 🚨 ---
-
     try {
+        // 1. Basic Validation
         if (!username || !password) {
             return res.render('login', { error: 'Username and password are required.' });
         }
 
-        // Fetch user by username
+        // 2. Fetch user from Database
+        // (We use lowercase to ensure case-insensitive matching)
         const user = await knex('users').where({ username: username.toLowerCase() }).first();
 
+        // 3. Check if User Exists & Password Matches
+        // (Note: In a real app, you should compare hashed passwords, not plain text)
         if (!user || user.password !== password) {
             return res.render('login', { error: 'Invalid username or password.' });
         }
 
-        // Set Session (No User ID used)
+        // 4. Set Session Variables
         req.session.username = user.username;
         req.session.firstName = user.firstname;
-        req.session.level = user.level;
-        req.session.isParent = user.parentflag;
+        req.session.level = user.level;     // 'M' or 'U'
+        req.session.isParent = user.parentflag; // True/False
 
+        // 5. Save Session & Redirect
         req.session.save(err => {
             if (err) console.error("Session save error:", err);
             
-            // Redirect based on role
+            // Redirect Manager to Dashboard, everyone else to Home
             if (req.session.level === 'M') {
                 res.redirect('/admin/dashboard');
             } else {
@@ -226,7 +216,7 @@ app.post('/login', async (req, res) => {
 
     } catch (err) {
         console.error('Login error:', err);
-        return res.render('login', { error: 'An error occurred while logging in (Database likely offline).' });
+        return res.render('login', { error: 'An error occurred while logging in. Please try again.' });
     }
 });
 
