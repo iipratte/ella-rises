@@ -424,7 +424,7 @@ app.post("/participants/add", async (req, res) => {
     }
 
     // Standard fields
-    const { firstName, lastName, email, phone, dob, zip, employer, interest } = req.body;
+    const { firstName, lastName, email, phone, dob, zip, employer, interest, username } = req.body;
     
     // LOGIC: Determine the username
     // If Parent -> Auto-link to their own account
@@ -531,13 +531,14 @@ app.post("/participants/delete/:id", async (req, res) => {
 
 // --- EVENT ROUTES ---
 
-// 1. VIEW EVENTS (Updated with My Events + Linked Kids)
+// --- EVENT ROUTES ---
+
+// 1. VIEW EVENTS
 app.get("/events", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
-        // A. GET ALL EVENTS (For the main list)
-        // We left join registrations to count how many people are going
+        // A. GET ALL EVENTS
         const allEvents = await knex('event_schedule')
             .join('events', 'event_schedule.eventid', '=', 'events.eventid')
             .leftJoin('registrations', 'event_schedule.scheduleid', 'registrations.scheduleid')
@@ -556,67 +557,138 @@ app.get("/events", async (req, res) => {
             )
             .orderBy('event_schedule.eventdatetimestart', 'asc');
 
-        // Split into Upcoming and Past
         const now = new Date();
         const upcoming = allEvents.filter(e => new Date(e.eventdatetimestart) >= now);
         const past = allEvents.filter(e => new Date(e.eventdatetimestart) < now).reverse();
 
-        // B. GET LINKED PARTICIPANTS (For the "Who is attending?" dropdown)
-        // Finds all participants linked to this logged-in user account
+        // B. GET LINKED PARTICIPANTS
         const myParticipants = await knex('participants')
             .where({ username: req.session.username })
             .select('participantid', 'participantfirstname', 'participantlastname');
 
-        // C. GET MY REGISTRATIONS (For the "My Events" top section)
-        // We need to know WHICH participant is going to WHICH event
-        const myRegistrations = await knex('registrations')
+        // C. GET MY REGISTRATIONS (Enhanced for Lookup)
+        const rawRegistrations = await knex('registrations')
             .join('event_schedule', 'registrations.scheduleid', '=', 'event_schedule.scheduleid')
             .join('events', 'event_schedule.eventid', '=', 'events.eventid')
             .join('participants', 'registrations.participantid', '=', 'participants.participantid')
-            .whereIn('participants.username', [req.session.username]) // Only my linked kids
+            .whereIn('participants.username', [req.session.username])
             .select(
                 'registrations.registrationid',
+                'event_schedule.scheduleid',
                 'events.eventname',
                 'event_schedule.eventdatetimestart',
                 'event_schedule.eventlocation',
                 'participants.participantfirstname',
-                'participants.participantlastname'
+                'participants.participantid' // Needed for the check/uncheck logic
             )
             .orderBy('event_schedule.eventdatetimestart', 'asc');
 
-        res.render("events", { upcoming, past, myParticipants, myRegistrations });
+        // Logic 1: Create a "Lookup Set" so EJS can instantly know if [Event 1 + Kid A] is registered
+        // Format: "ScheduleID-ParticipantID"
+        const registeredSet = new Set(
+            rawRegistrations.map(r => `${r.scheduleid}-${r.participantid}`)
+        );
+
+        // Logic 2: Group for "My Events" display
+        const groupedRegistrations = {};
+        rawRegistrations.forEach(row => {
+            if (!groupedRegistrations[row.scheduleid]) {
+                groupedRegistrations[row.scheduleid] = {
+                    eventname: row.eventname,
+                    eventdatetimestart: row.eventdatetimestart,
+                    eventlocation: row.eventlocation,
+                    attendees: [] 
+                };
+            }
+            groupedRegistrations[row.scheduleid].attendees.push({
+                registrationid: row.registrationid,
+                name: row.participantfirstname,
+                id: row.participantid
+            });
+        });
+        const myRegistrations = Object.values(groupedRegistrations);
+
+        res.render("events", { upcoming, past, myParticipants, myRegistrations, registeredSet });
 
     } catch (err) {
-        console.error('Error fetching events:', err);
-        res.render("events", { upcoming: [], past: [], myParticipants: [], myRegistrations: [] }); 
+        console.error("Error fetching events:", err);
+        res.render("events", { upcoming: [], past: [], myParticipants: [], myRegistrations: [], registeredSet: new Set() }); 
     }
 });
 
-// 2. REGISTER FOR EVENT (New Route)
+// 2. REGISTER / SYNC (Handles Checkboxes & Single Buttons)
 app.post("/events/register", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     const { scheduleId, participantId } = req.body;
 
     try {
-        await knex('registrations').insert({
-            scheduleid: scheduleId,
-            participantid: participantId
-        });
+        if (req.session.isParent) {
+            // --- PARENT SYNC MODE (Add Checked, Remove Unchecked) ---
+            
+            // 1. Get List of IDs wanted (handle single value vs array vs undefined)
+            const requestedIds = new Set(
+                (Array.isArray(participantId) ? participantId : [participantId])
+                .filter(Boolean) // remove null/undefined
+                .map(id => parseInt(id))
+            );
+
+            // 2. Get all kids belonging to this parent (Security Check)
+            const myKids = await knex('participants')
+                .where({ username: req.session.username })
+                .select('participantid');
+
+            // 3. Loop through EACH kid and Sync status
+            for (const kid of myKids) {
+                if (requestedIds.has(kid.participantid)) {
+                    // WANT: Register (Insert if not exists)
+                    await knex('registrations').insert({
+                        scheduleid: scheduleId,
+                        participantid: kid.participantid
+                    }).onConflict(['participantid', 'scheduleid']).ignore();
+                } else {
+                    // DON'T WANT: Unregister (Delete if exists)
+                    await knex('registrations')
+                        .where({ scheduleid: scheduleId, participantid: kid.participantid })
+                        .del();
+                }
+            }
+
+        } else {
+            // --- STUDENT MODE (Single Add) ---
+            if (participantId) {
+                await knex('registrations').insert({
+                    scheduleid: scheduleId,
+                    participantid: participantId
+                }).onConflict(['participantid', 'scheduleid']).ignore();
+            }
+        }
+
         res.redirect('/events');
+
     } catch (err) {
         console.error("Registration error:", err);
-        // If duplicate key error, they are already registered. Just redirect back.
         res.redirect('/events');
     }
 });
 
-// 3. UNREGISTER (Optional but good UX)
+// 3. UNREGISTER (For Student 'Leave' Button or specific cancel)
 app.post("/events/unregister", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
-    const { registrationId } = req.body;
+    
+    const { registrationId, scheduleId, participantId } = req.body;
+
     try {
-        await knex('registrations').where({ registrationid: registrationId }).del();
+        if (registrationId) {
+            // Delete by Registration ID (from My Events list)
+            await knex('registrations').where({ registrationid: registrationId }).del();
+        } else if (scheduleId && participantId) {
+            // Delete by Event+User (from Student Toggle Button)
+            await knex('registrations')
+                .where({ scheduleid: scheduleId, participantid: participantId })
+                .del();
+        }
+        
         res.redirect('/events');
     } catch (err) {
         console.error("Unregister error:", err);

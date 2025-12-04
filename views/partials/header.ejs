@@ -34,11 +34,7 @@
           <% if (user.role === 'Manager' || user.isAdmin) { %>
             
             <li class="nav-item">
-              <a class="nav-link" href="../milestones">Milestones</a>
-            </li>
-
-            <li class="nav-item">
-              <a class="nav-link text-warning" href="/dashboard">Dashboard</a>
+              <a class="nav-link" href="/milestones">Milestones</a>
             </li>
 
             <li class="nav-item dropdown">
@@ -46,6 +42,9 @@
                     Admin Tools
                 </a>
                 <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                    <li><a class="dropdown-item fw-bold" href="/dashboard"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    
                     <li><a class="dropdown-item" href="/admin/users">User Maintenance</a></li>
                     <li><a class="dropdown-item" href="/admin/donations">Donation History</a></li>
                     <li><a class="dropdown-item" href="/admin/survey-data">View Survey Responses</a></li>
