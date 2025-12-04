@@ -368,9 +368,12 @@ app.post("/account", async (req, res) => {
 
 // --- PARTICIPANTS ---
 
-// 1. LIST PARTICIPANTS (Sorted: My Kids First)
+// 1. LIST PARTICIPANTS (With Search)
 app.get("/participants", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
+
+    // 1. Get Search Params
+    const { firstName, lastName, username } = req.query;
 
     try {
         let query = knex('participants')
@@ -384,18 +387,27 @@ app.get("/participants", async (req, res) => {
                 'username'
             );
 
-        // SORTING LOGIC:
-        // If Parent: Show their linked kids (matching username) FIRST (0), everyone else SECOND (1)
+        // 2. Apply Search Filters
+        if (firstName) {
+            query = query.where('participantfirstname', 'ilike', `%${firstName}%`);
+        }
+        if (lastName) {
+            query = query.where('participantlastname', 'ilike', `%${lastName}%`);
+        }
+        if (username) {
+            query = query.where('username', 'ilike', `%${username}%`);
+        }
+
+        // 3. Apply Sorting
         if (req.session.isParent) {
             query = query.orderByRaw(`CASE WHEN username = ? THEN 0 ELSE 1 END`, [req.session.username]);
         }
-        
-        // Secondary sort: Newest first
-        query = query.orderBy('participantid', 'desc');
+        query = query.orderBy('participantid', 'desc'); // Newest first
 
+        // 4. Execute Query
         const participants = await query;
 
-        // Fetch milestone counts
+        // 5. Fetch Milestones (Optimization: Could filter this too, but okay for now)
         const milestoneCounts = await knex('milestones')
             .select('participantid')
             .count('milestoneid as count')
@@ -406,11 +418,23 @@ app.get("/participants", async (req, res) => {
             p.milestone_count = match ? match.count : 0;
         });
 
-        res.render("participants", { participants });
+        // 6. Render with Search Terms
+        res.render("participants", { 
+            participants,
+            // Pass terms back to view to keep inputs filled
+            searchFirstName: firstName || '',
+            searchLastName: lastName || '',
+            searchUsername: username || ''
+        });
 
     } catch (err) {
         console.error("Error fetching participants:", err);
-        res.render("participants", { participants: [] });
+        res.render("participants", { 
+            participants: [],
+            searchFirstName: '',
+            searchLastName: '',
+            searchUsername: ''
+        });
     }
 });
 

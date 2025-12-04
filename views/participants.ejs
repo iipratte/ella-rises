@@ -23,6 +23,36 @@
             </div>
         </div>
 
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body bg-white p-4">
+                <form action="/participants" method="GET" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-muted small text-uppercase">First Name</label>
+                        <input type="text" class="form-control" name="firstName" value="<%= searchFirstName %>" placeholder="Search...">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Last Name</label>
+                        <input type="text" class="form-control" name="lastName" value="<%= searchLastName %>" placeholder="Search...">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Username</label>
+                        <input type="text" class="form-control" name="username" value="<%= searchUsername %>" placeholder="Search linked user...">
+                    </div>
+                    <div class="col-md-3 d-grid">
+                        <button type="submit" class="btn btn-primary">Apply Filter</button>
+                    </div>
+                    
+                    <% if (searchFirstName || searchLastName || searchUsername) { %>
+                        <div class="col-12 text-end mt-2">
+                            <a href="/participants" class="text-decoration-none small text-danger">
+                                <i class="bi bi-x-circle"></i> Clear Filters
+                            </a>
+                        </div>
+                    <% } %>
+                </form>
+            </div>
+        </div>
+
         <div class="card shadow border-0">
             <div class="card-header d-flex justify-content-between align-items-center bg-white py-3 border-bottom">
                 <h5 class="mb-0 fw-bold text-dark">All Participants</h5>
@@ -53,17 +83,17 @@
                         <tbody>
                             <% if (participants.length === 0) { %>
                                 <tr>
-                                   <td colspan="6" class="text-center py-5 text-muted">
-                                        No participants found in the database.
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        No participants found matching your search.
                                     </td>
                                 </tr>
                             <% } else { %>
                                 <% participants.forEach(p => { %>
                                     <tr>
-                                        <td class="ps-4 fw-bold text-primary">
-                                            <%= p.participantfirstname %> <%= p.participantlastname %>
+                                        <td class="ps-4">
+                                            <div class="fw-bold text-primary"><%= p.participantfirstname %> <%= p.participantlastname %></div>
                                             <% if(p.username) { %>
-                                                <br><small class="text-muted fw-normal" style="font-size: 0.75em;">(@<%= p.username %>)</small>
+                                                <small class="text-muted">(@<%= p.username %>)</small>
                                             <% } %>
                                         </td>
                                         
@@ -73,13 +103,8 @@
                                             </a>
                                         </td>
 
-                                        <td>
-                                            <%= p.participantschooloremployer || '-' %>
-                                        </td>
-
-                                        <td>
-                                            <%= p.participantfieldofinterest || '-' %>
-                                        </td>
+                                        <td><%= p.participantschooloremployer || '-' %></td>
+                                        <td><%= p.participantfieldofinterest || '-' %></td>
 
                                         <td>
                                             <% if (p.milestone_count > 0) { %>
@@ -97,9 +122,8 @@
                                         %>
 
                                         <% if (isManager || isOwner) { %>
-                                           <td class="text-end pe-4">
+                                            <td class="text-end pe-4">
                                                 <div class="d-flex justify-content-end gap-2">
-                                                    
                                                     <a href="/participants/edit/<%= p.participantid %>" class="btn btn-sm btn-outline-secondary rounded-circle" title="Edit" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
                                                         <i class="bi bi-pencil-fill"></i>
                                                     </a>
