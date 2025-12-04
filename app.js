@@ -579,7 +579,7 @@ app.post("/events/add", async (req, res) => {
     }
 });
 
-// --- SURVEYS ---
+// --- SURVEY ROUTES ---
 
 app.get("/surveys", (req, res) => {
     res.redirect("/survey"); 
@@ -589,28 +589,73 @@ app.get("/survey", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
-        const events = await knex('events').select('eventname').orderBy('eventname');
+        // 1. Get the logged-in user's participant record
+        const participant = await knex('participants').where({ username: req.session.username }).first();
+
+        if (!participant) {
+            // If they are a user but not a participant (e.g. pure admin), show no events
+            return res.render("surveys", { events: [] });
+        }
+
+        // 2. Fetch only the events they have registered for
+        // We need the 'registrationid' to link the survey to the specific attendance
+        const events = await knex('registrations')
+            .join('event_schedule', 'registrations.scheduleid', '=', 'event_schedule.scheduleid')
+            .join('events', 'event_schedule.eventid', '=', 'events.eventid')
+            .select(
+                'registrations.registrationid',
+                'events.eventname',
+                'event_schedule.eventdatetimestart'
+            )
+            .where('registrations.participantid', participant.participantid)
+            .orderBy('event_schedule.eventdatetimestart', 'desc');
+
         res.render("surveys", { events });
+
     } catch (err) {
-        console.error("Error fetching events:", err);
-        const dummyEvents = [{ eventname: 'General Program' }];
-        res.render("surveys", { events: dummyEvents });
+        console.error("Error fetching survey events:", err);
+        res.render("surveys", { events: [] });
     }
 });
 
 app.post("/survey/submit", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
-    const { eventName, satisfaction, usefulness, comments } = req.body;
+    // Destructure new form fields
+    const { 
+        registrationId, 
+        satisfaction, 
+        usefulness, 
+        instructor, 
+        recommendation, 
+        comments 
+    } = req.body;
 
     try {
-        await knex('survey_responses').insert({
-            event_name: eventName,
-            satisfaction_score: satisfaction,
-            usefulness_score: usefulness, 
-            comments: comments
+        // 1. Calculate NPS Bucket (0-10 scale)
+        let npsBucket = 'Passive';
+        const recScore = parseInt(recommendation);
+        if (recScore >= 9) npsBucket = 'Promoter';
+        else if (recScore <= 6) npsBucket = 'Detractor';
+
+        // 2. Calculate Overall Score (Average of the 5-point metrics)
+        // (Satisfaction + Usefulness + Instructor) / 3
+        const overallScore = ((parseInt(satisfaction) + parseInt(usefulness) + parseInt(instructor)) / 3).toFixed(2);
+
+        // 3. Insert into the new 'surveys' table
+        await knex('surveys').insert({
+            registrationid: registrationId,
+            surveysatisfactionscore: satisfaction,
+            surveyusefulnessscore: usefulness,
+            surveyinstructorscore: instructor,
+            surveyrecommendationscore: recScore,
+            surveyoverallscore: overallScore,
+            surveynpsbucket: npsBucket,
+            surveycomments: comments
         });
+
         res.redirect('/thankyou');
+
     } catch (err) {
         console.error("Survey submit error:", err);
         res.redirect('/survey');
@@ -637,7 +682,7 @@ app.get("/admin/survey-data", async (req, res) => {
 app.get("/milestones", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
-    // 1. Get search params from URL
+    // 1. Get searfch params from URL
     const { firstName, lastName } = req.query;
 
     try {
@@ -890,16 +935,49 @@ app.get("/thankyou", (req, res) => {
 // =========================================
 
 // List Users
+// --- USER MAINTENANCE ROUTES (Admin Only) ---
+
+// 1. LIST ALL USERS (With Search)
 app.get("/admin/users", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
+    // 1. Get search params from URL
+    const { firstName, lastName, username } = req.query;
+
     try {
-        // Order by username since we aren't using IDs
-        const users = await knex('users').select('*').orderBy('username');
-        res.render("admin/userMaintenance", { users });
+        // 2. Start building the query
+        let query = knex('users').select('*').orderBy('username');
+
+        // 3. Apply filters if user typed something
+        if (firstName) {
+            query = query.where('firstname', 'ilike', `%${firstName}%`);
+        }
+        if (lastName) {
+            query = query.where('lastname', 'ilike', `%${lastName}%`);
+        }
+        if (username) {
+            query = query.where('username', 'ilike', `%${username}%`);
+        }
+
+        // 4. Execute query
+        const users = await query;
+
+        // 5. Render with search terms passed back
+        res.render("admin/userMaintenance", { 
+            users,
+            searchFirstName: firstName || '',
+            searchLastName: lastName || '',
+            searchUsername: username || ''
+        });
+
     } catch (err) {
         console.error("Error fetching users:", err);
-        res.render("admin/userMaintenance", { users: [] });
+        res.render("admin/userMaintenance", { 
+            users: [],
+            searchFirstName: '',
+            searchLastName: '',
+            searchUsername: ''
+        });
     }
 });
 
