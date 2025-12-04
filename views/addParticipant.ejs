@@ -71,13 +71,15 @@
                         </div>
                     </div>
 
-                    <div class="alert alert-light border mb-4">
-                        <label class="form-label fw-bold text-primary">Link to User Account (Optional)</label>
-                        <input type="text" class="form-control" name="username" placeholder="Enter username if you have an account..." value="<%= typeof username !== 'undefined' ? username : '' %>">
-                        <div class="form-text text-muted small">
-                            If provided, this must match an existing username. Leave blank if they haven't signed up yet.
+                    <% if (!user.isParent) { %>
+                        <div class="alert alert-light border mb-4">
+                            <label class="form-label fw-bold text-primary">Link to User Account (Optional)</label>
+                            <input type="text" class="form-control" name="username" placeholder="Enter username if they have an account..." value="<%= typeof username !== 'undefined' ? username : '' %>">
+                            <div class="form-text text-muted small">
+                                If provided, this must match an existing username. Leave blank if they haven't signed up yet.
+                            </div>
                         </div>
-                    </div>
+                    <% } %>
 
                     <div class="d-flex justify-content-between">
                         <a href="/participants" class="btn btn-outline-secondary">Cancel</a>
