@@ -17,7 +17,7 @@
             <div class="bg-white p-3 rounded shadow-sm border text-center">
                 <small class="text-muted text-uppercase fw-bold">Total Donations</small>
                 <h3 class="text-success fw-bold mb-0">
-                    $<%= donations.reduce((sum, d) => sum + Number(d.donationamount), 0).toFixed(2) %>
+                    $<%= donations.reduce((sum, d) => sum + Number(d.donationamount), 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %>
                 </h3>
             </div>
         </div>
@@ -40,23 +40,36 @@
                             <% } else { %>
                                 <% donations.forEach(d => { %>
                                     <tr>
-                                        <td>
+                                        <td class="ps-4">
                                             <% if (d.donationdate) { %>
                                                 <%= new Date(d.donationdate).toLocaleDateString() %>
                                             <% } else { %>
                                                 <span class="text-muted small fst-italic">Unknown Date</span>
                                             <% } %>
                                         </td>
+
                                         <td class="fw-bold">
-                                            <%= d.participantfirstname %> <%= d.participantlastname %>
+                                            <% if (d.participantfirstname) { %>
+                                                <%= d.participantfirstname %> <%= d.participantlastname %>
+                                            <% } else { %>
+                                                <span class="text-muted fst-italic">
+                                                    <i class="bi bi-person-x-fill me-1"></i> (Deleted User)
+                                                </span>
+                                            <% } %>
                                         </td>
+                                        
                                         <td>
-                                            <a href="mailto:<%= d.participantemail %>" class="text-decoration-none">
-                                                <%= d.participantemail %>
-                                            </a>
+                                            <% if (d.participantemail) { %>
+                                                <a href="mailto:<%= d.participantemail %>" class="text-decoration-none">
+                                                    <%= d.participantemail %>
+                                                </a>
+                                            <% } else { %>
+                                                <span class="text-muted small">-</span>
+                                            <% } %>
                                         </td>
+
                                         <td class="text-end pe-4 fw-bold text-success">
-                                            $<%= Number(d.donationamount).toFixed(2) %>
+                                            $<%= Number(d.donationamount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) %>
                                         </td>
                                     </tr>
                                 <% }) %>
