@@ -389,29 +389,30 @@ app.get("/participants", async (req, res) => {
         }
 
         // 3. Apply Sorting
+        // If Parent: Show their linked kids (matching username) FIRST (0), everyone else SECOND (1)
         if (req.session.isParent) {
             query = query.orderByRaw(`CASE WHEN username = ? THEN 0 ELSE 1 END`, [req.session.username]);
         }
-        query = query.orderBy('participantid', 'desc'); // Newest first
+        query = query.orderBy('participantid', 'desc'); // Secondary sort
 
         // 4. Execute Query
         const participants = await query;
 
-        // 5. Fetch Milestones (Optimization: Could filter this too, but okay for now)
+        // 5. Fetch Milestones
         const milestoneCounts = await knex('milestones')
             .select('participantid')
             .count('milestoneid as count')
             .groupBy('participantid');
 
+        // 6. Merge counts
         participants.forEach(p => {
             const match = milestoneCounts.find(m => m.participantid == p.participantid);
             p.milestone_count = match ? match.count : 0;
         });
 
-        // 6. Render with Search Terms
+        // 7. Render with Search Terms
         res.render("participants", { 
             participants,
-            // Pass terms back to view to keep inputs filled
             searchFirstName: firstName || '',
             searchLastName: lastName || '',
             searchUsername: username || ''
@@ -1079,38 +1080,153 @@ app.post('/donate', async (req, res) => {
     }
 });
 
-// --- ADMIN DONATION HISTORY ---
+// --- ADMIN DONATION ROUTES ---
+
+// 1. LIST DONATIONS
 app.get("/admin/donations", async (req, res) => {
     if (!req.session.username) {
         return res.redirect('/');
     }
 
     try {
-        // CHANGED: .leftJoin() allows donations to show even if participant is null
         const donations = await knex('donations')
-            .leftJoin('participants', 'donations.participantid', '=', 'participants.participantid')
+            .join('participants', 'donations.participantid', '=', 'participants.participantid')
             .select(
                 'donations.donationid',
                 'donations.donationamount',
                 'donations.donationdate',
+                'donations.donationnotes',
                 'participants.participantfirstname',
                 'participants.participantlastname',
                 'participants.participantemail'
             )
-            .orderByRaw(`
-                CASE
-                    WHEN donations.donationdate IS NULL THEN 2
-                    WHEN donations.donationdate > CURRENT_DATE THEN 1
-                    ELSE 0
-                END,
-                donations.donationdate DESC
-            `);
-            
-        res.render("admin/donationHistory", { donations });
+            .orderByRaw('donations.donationdate DESC NULLS LAST');
 
+        res.render("admin/donationHistory", { donations });
     } catch (err) {
         console.error("Error fetching donation history:", err);
         res.render("admin/donationHistory", { donations: [] });
+    }
+});
+
+// 2. SHOW ADD DONATION FORM (With Search)
+app.get("/admin/donations/add", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    // Get query params (Search terms + Selected User ID)
+    const { firstName, lastName, username, selectedId } = req.query;
+    
+    let participants = [];
+    let selectedParticipant = null;
+
+    try {
+        // A. If a user was selected, fetch their details
+        if (selectedId) {
+            selectedParticipant = await knex('participants')
+                .where({ participantid: selectedId })
+                .first();
+        }
+
+        // B. If search terms exist, run the search
+        if (firstName || lastName || username) {
+            let query = knex('participants')
+                .select('participantid', 'participantfirstname', 'participantlastname', 'participantemail', 'username')
+                .orderBy('participantlastname', 'asc')
+                .limit(50); // Limit results to keep page light
+
+            if (firstName) query = query.where('participantfirstname', 'ilike', `%${firstName}%`);
+            if (lastName) query = query.where('participantlastname', 'ilike', `%${lastName}%`);
+            if (username) query = query.where('username', 'ilike', `%${username}%`);
+
+            participants = await query;
+        }
+
+        res.render("addDonation", { 
+            participants, 
+            selectedParticipant,
+            // Pass terms back to keep form filled
+            searchFirstName: firstName || '',
+            searchLastName: lastName || '',
+            searchUsername: username || ''
+        });
+    } catch (err) {
+        console.error("Error loading add donation form:", err);
+        res.redirect('/admin/donations');
+    }
+});
+
+// 3. PROCESS ADD DONATION
+app.post("/admin/donations/add", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    const { participantId, amount, date, notes } = req.body;
+
+    try {
+        await knex('donations').insert({
+            participantid: participantId,
+            donationamount: amount,
+            donationdate: date || new Date(),
+            donationnotes: notes
+        });
+        res.redirect('/admin/donations');
+    } catch (err) {
+        console.error("Error adding donation:", err);
+        res.send("Error adding donation.");
+    }
+});
+
+// 4. SHOW EDIT FORM
+app.get("/admin/donations/edit/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    try {
+        const donation = await knex('donations').where({ donationid: req.params.id }).first();
+        
+        if (!donation) return res.redirect('/admin/donations');
+
+        // Fetch the *current* donor for display
+        const currentDonor = await knex('participants')
+            .where({ participantid: donation.participantid })
+            .first();
+
+        res.render("editDonation", { donation, currentDonor });
+    } catch (err) {
+        console.error("Error loading edit form:", err);
+        res.redirect('/admin/donations');
+    }
+});
+
+// 5. PROCESS EDIT
+app.post("/admin/donations/edit/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    const { amount, date, notes } = req.body;
+
+    try {
+        await knex('donations')
+            .where({ donationid: req.params.id })
+            .update({
+                donationamount: amount,
+                donationdate: date,
+                donationnotes: notes
+            });
+        res.redirect('/admin/donations');
+    } catch (err) {
+        console.error("Error updating donation:", err);
+        res.send("Error updating donation.");
+    }
+});
+
+// 6. DELETE DONATION
+app.post("/admin/donations/delete/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    try {
+        await knex('donations').where({ donationid: req.params.id }).del();
+        res.redirect('/admin/donations');
+    } catch (err) {
+        console.error("Error deleting donation:", err);
+        res.redirect('/admin/donations');
     }
 });
 
