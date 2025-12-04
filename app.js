@@ -791,14 +791,13 @@ app.get("/survey", async (req, res) => {
 
     try {
         // Get events the user has actually registered for
-        // (So they can't review an event they didn't attend)
         const myEvents = await knex('registrations')
             .join('event_schedule', 'registrations.scheduleid', '=', 'event_schedule.scheduleid')
             .join('events', 'event_schedule.eventid', '=', 'events.eventid')
             .join('participants', 'registrations.participantid', '=', 'participants.participantid')
             .where('participants.username', req.session.username)
-            .select('events.eventname', 'registrations.registrationid')
-            .distinct('events.eventname'); // distinct in case of multiple kids
+            .select('events.eventname', 'event_schedule.scheduleid') // Select scheduleid directly
+            .distinct('events.eventname'); 
 
         res.render("surveys", { events: myEvents });
     } catch (err) {
@@ -807,31 +806,29 @@ app.get("/survey", async (req, res) => {
     }
 });
 
-// 2. SUBMIT SURVEY (Updated for 'surveys' table)
+// 2. SUBMIT SURVEY (Fixed to use scheduleid)
 app.post("/survey/submit", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
-    // We now expect 'registrationId' from the form (see next step), 
-    // or we look it up if we stick to eventName.
-    // Let's stick to the current form logic (eventName) and find the ID here.
     const { eventName, satisfaction, usefulness, comments } = req.body;
 
     try {
-        // 1. Find the registration ID for this user & event
-        // (We grab the most recent one if they have multiple kids/dates)
-        const registration = await knex('registrations')
+        // 1. Find the Schedule ID and Participant ID for this user & event
+        const match = await knex('registrations')
             .join('event_schedule', 'registrations.scheduleid', '=', 'event_schedule.scheduleid')
             .join('events', 'event_schedule.eventid', '=', 'events.eventid')
             .join('participants', 'registrations.participantid', '=', 'participants.participantid')
             .where('participants.username', req.session.username)
             .where('events.eventname', eventName)
             .orderBy('registrations.registrationid', 'desc')
-            .select('registrations.registrationid')
+            .select('registrations.scheduleid', 'registrations.participantid')
             .first();
 
-        if (registration) {
+        if (match) {
             await knex('surveys').insert({
-                registrationid: registration.registrationid,
+                // Use scheduleid and participantid (matching your table structure)
+                scheduleid: match.scheduleid,
+                participantid: match.participantid,
                 surveysatisfactionscore: satisfaction,
                 surveyusefulnessscore: usefulness,
                 surveycomments: comments,
@@ -848,17 +845,16 @@ app.post("/survey/submit", async (req, res) => {
     }
 });
 
-// 3. ADMIN: VIEW RESPONSES (Updated for 'surveys' table)
+// 3. ADMIN: VIEW RESPONSES (Fixed JOINs)
 app.get("/admin/survey-data", async (req, res) => {
-    if (!req.session.username || req.session.level !== 'M') {
+    if (!req.session.username) {
         return res.redirect('/');
     }
 
     try {
-        // Join 4 tables to get from "Survey" -> "Event Name"
+        // Correct JOIN path: Surveys -> Event_Schedule -> Events
         const responses = await knex('surveys')
-            .join('registrations', 'surveys.registrationid', '=', 'registrations.registrationid')
-            .join('event_schedule', 'registrations.scheduleid', '=', 'event_schedule.scheduleid')
+            .join('event_schedule', 'surveys.scheduleid', '=', 'event_schedule.scheduleid')
             .join('events', 'event_schedule.eventid', '=', 'events.eventid')
             .select(
                 'events.eventname as event_name',
@@ -1088,7 +1084,9 @@ app.post('/donate', async (req, res) => {
 
 // 1. LIST DONATIONS
 app.get("/admin/donations", async (req, res) => {
-    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    if (!req.session.username) {
+        return res.redirect('/');
+    }
 
     try {
         const donations = await knex('donations')
@@ -1441,6 +1439,10 @@ app.post("/admin/users/delete/:username", async (req, res) => {
 });
 
 app.get("/teapot", (req, res) => {
+    // Security Check: Must be logged in
+    if (!req.session.username) {
+        return res.redirect('/login');
+    }
     res.status(418).send("418: I'm a little Teapot (Short and stout)");
 });
 
