@@ -44,7 +44,7 @@
                                 <th class="py-3">School / Employer</th>
                                 <th class="py-3">Field of Interest</th>
                                 <th class="py-3">Milestones</th>
-                                <% if (user && user.role === 'Manager') { %> 
+                                <% if (user) { %> 
                                     <th class="text-end pe-4 py-3">Actions</th> 
                                 <% } %>
                             </tr>
@@ -91,20 +91,30 @@
                                             <% } %>
                                         </td>
 
-                                        <% if (user && user.role === 'Manager') { %>
+                                        <% 
+                                            const isManager = user && user.role === 'Manager';
+                                            const isOwner = user && p.username === user.username;
+                                        %>
+
+                                        <% if (isManager || isOwner) { %>
                                            <td class="text-end pe-4">
-                                                <div class="btn-group">
-                                                    <a href="/participants/edit/<%= p.participantid %>" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                <div class="d-flex justify-content-end gap-2">
+                                                    
+                                                    <a href="/participants/edit/<%= p.participantid %>" class="btn btn-sm btn-outline-secondary rounded-circle" title="Edit" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
                                                         <i class="bi bi-pencil-fill"></i>
                                                     </a>
                                                     
-                                                    <form action="/participants/delete/<%= p.participantid %>" method="POST" class="d-inline" onsubmit="return confirm('Delete participant <%= p.participantfirstname %>?');">
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                                                            <i class="bi bi-trash-fill"></i>
-                                                        </button>
-                                                    </form>
+                                                    <% if (isManager) { %>
+                                                        <form action="/participants/delete/<%= p.participantid %>" method="POST" class="d-inline" onsubmit="return confirm('Delete participant <%= p.participantfirstname %>?');">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle" title="Delete" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                                                <i class="bi bi-trash-fill"></i>
+                                                            </button>
+                                                        </form>
+                                                    <% } %>
                                                 </div>
                                             </td>
+                                        <% } else if (user) { %>
+                                            <td></td>
                                         <% } %>
                                     </tr>
                                 <% }) %>

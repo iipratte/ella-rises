@@ -368,13 +368,12 @@ app.post("/account", async (req, res) => {
 
 // --- PARTICIPANTS ---
 
-// 1. LIST PARTICIPANTS
+// 1. LIST PARTICIPANTS (Sorted: My Kids First)
 app.get("/participants", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
-        // Fetch participants with real names & email
-        const participants = await knex('participants')
+        let query = knex('participants')
             .select(
                 'participantid',
                 'participantfirstname',
@@ -383,8 +382,18 @@ app.get("/participants", async (req, res) => {
                 'participantschooloremployer',
                 'participantfieldofinterest',
                 'username'
-            )
-            .orderBy('participantid', 'desc'); // Newest first
+            );
+
+        // SORTING LOGIC:
+        // If Parent: Show their linked kids (matching username) FIRST (0), everyone else SECOND (1)
+        if (req.session.isParent) {
+            query = query.orderByRaw(`CASE WHEN username = ? THEN 0 ELSE 1 END`, [req.session.username]);
+        }
+        
+        // Secondary sort: Newest first
+        query = query.orderBy('participantid', 'desc');
+
+        const participants = await query;
 
         // Fetch milestone counts
         const milestoneCounts = await knex('milestones')
@@ -392,7 +401,6 @@ app.get("/participants", async (req, res) => {
             .count('milestoneid as count')
             .groupBy('participantid');
 
-        // Merge counts
         participants.forEach(p => {
             const match = milestoneCounts.find(m => m.participantid == p.participantid);
             p.milestone_count = match ? match.count : 0;
@@ -406,40 +414,30 @@ app.get("/participants", async (req, res) => {
     }
 });
 
-// 2. GET ADD FORM (Allowed for Managers OR Parents)
+// 2. GET ADD FORM
 app.get("/participants/add", (req, res) => {
-    // Permission Check: Must be Logged In AND (Manager OR Parent)
     if (!req.session.username || (req.session.level !== 'M' && !req.session.isParent)) {
         return res.redirect('/participants');
     }
-    
     res.render("addParticipant");
 });
 
-// 3. POST ADD FORM (Allowed for Managers OR Parents)
+// 3. POST ADD FORM
 app.post("/participants/add", async (req, res) => {
-    // Permission Check
     if (!req.session.username || (req.session.level !== 'M' && !req.session.isParent)) {
         return res.redirect('/');
     }
 
-    // Standard fields
     const { firstName, lastName, email, phone, dob, zip, employer, interest, username } = req.body;
     
-    // LOGIC: Determine the username
-    // If Parent -> Auto-link to their own account
-    // If Manager -> Use whatever they typed in the box (or null)
     let targetUsername = req.body.username;
-    
     if (req.session.isParent) {
         targetUsername = req.session.username;
     }
 
     try {
-        // Validation: If a username target is set, check if it actually exists
         if (targetUsername && targetUsername.trim() !== "") {
             const userExists = await knex('users').where({ username: targetUsername.toLowerCase() }).first();
-            
             if (!userExists) {
                 return res.render("addParticipant", { 
                     error: "Error: That username does not exist.",
@@ -448,7 +446,6 @@ app.post("/participants/add", async (req, res) => {
             }
         }
 
-        // Insert new participant
         await knex('participants').insert({
             participantfirstname: firstName,
             participantlastname: lastName,
@@ -458,7 +455,7 @@ app.post("/participants/add", async (req, res) => {
             participantzip: zip,
             participantschooloremployer: employer,
             participantfieldofinterest: interest,
-            username: targetUsername || null  // Saves the parent's username here
+            username: targetUsername || null
         });
 
         res.redirect('/participants');
@@ -472,49 +469,83 @@ app.post("/participants/add", async (req, res) => {
     }
 });
 
-// 4. GET EDIT FORM (Managers Only)
+// 4. GET EDIT FORM (Smart Permissions + Autofill Data)
 app.get("/participants/edit/:id", async (req, res) => {
-    if (!req.session.username || req.session.level !== 'M') return res.redirect('/participants');
+    if (!req.session.username) return res.redirect('/login');
 
     try {
         const participant = await knex('participants').where({ participantid: req.params.id }).first();
-        if (!participant) return res.redirect('/participants');
         
-        // Ensure you have a view file named 'editParticipant.ejs' or change this to reuse another form
-        // For now, assuming you reuse 'addParticipant' or have an edit one. 
-        // If you don't have 'editParticipant.ejs', you might need to create it.
-        res.render("editUser", { userToEdit: participant }); // CAUTION: This might expect different variables
+        if (!participant) return res.redirect('/participants');
+
+        // PERMISSION CHECK:
+        // You can edit if: You are a Manager OR You are the Parent linked to this kid
+        const isOwner = participant.username === req.session.username;
+        const isManager = req.session.level === 'M';
+
+        if (!isManager && !isOwner) {
+            return res.redirect('/participants');
+        }
+        
+        // Render the NEW edit template
+        res.render("editParticipant", { participant }); 
+
     } catch (err) {
         console.error("Error finding participant:", err);
         res.redirect('/participants');
     }
 });
 
-// 5. POST EDIT FORM (Managers Only)
+// 5. POST EDIT FORM (Update All Fields)
 app.post("/participants/edit/:id", async (req, res) => {
-    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    if (!req.session.username) return res.redirect('/');
 
-    // Note: This logic depends on what fields your Edit Form sends. 
-    // Assuming standard fields:
-    const { username, schoolOrEmployer, fieldOfInterest } = req.body;
+    // Gather all fields
+    const { firstName, lastName, email, phone, dob, zip, employer, interest, username } = req.body;
 
     try {
+        // Fetch first to check permissions
+        const participant = await knex('participants').where({ participantid: req.params.id }).first();
+        if (!participant) return res.redirect('/participants');
+
+        const isOwner = participant.username === req.session.username;
+        const isManager = req.session.level === 'M';
+
+        if (!isManager && !isOwner) {
+            return res.redirect('/participants');
+        }
+
+        // Prepare Update Object
+        const updateData = {
+            participantfirstname: firstName,
+            participantlastname: lastName,
+            participantemail: email,
+            participantphone: phone,
+            participantdob: dob || null,
+            participantzip: zip,
+            participantschooloremployer: employer,
+            participantfieldofinterest: interest
+        };
+
+        // Only allow changing the linked username if you are a Manager
+        // (Parents shouldn't accidentally unlink their kids)
+        if (isManager) {
+            updateData.username = username || null;
+        }
+
         await knex('participants')
             .where({ participantid: req.params.id })
-            .update({
-                username: username,
-                participantschooloremployer: schoolOrEmployer,
-                participantfieldofinterest: fieldOfInterest
-            });
+            .update(updateData);
         
         res.redirect('/participants');
+
     } catch (err) {
         console.error("Error updating participant:", err);
-        res.send("Error updating participant.");
+        res.send("Error updating participant: " + err.message);
     }
 });
 
-// 6. DELETE PARTICIPANT (Managers Only)
+// 6. DELETE PARTICIPANT (Manager Only - Safety First)
 app.post("/participants/delete/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
@@ -526,10 +557,6 @@ app.post("/participants/delete/:id", async (req, res) => {
         res.send("Cannot delete participant (likely has related records).");
     }
 });
-
-// --- EVENTS ---
-
-// --- EVENT ROUTES ---
 
 // --- EVENT ROUTES ---
 
@@ -566,7 +593,7 @@ app.get("/events", async (req, res) => {
             .where({ username: req.session.username })
             .select('participantid', 'participantfirstname', 'participantlastname');
 
-        // C. GET MY REGISTRATIONS (Enhanced for Lookup)
+        // C. GET MY REGISTRATIONS (With IDs for the Set)
         const rawRegistrations = await knex('registrations')
             .join('event_schedule', 'registrations.scheduleid', '=', 'event_schedule.scheduleid')
             .join('events', 'event_schedule.eventid', '=', 'events.eventid')
@@ -579,17 +606,17 @@ app.get("/events", async (req, res) => {
                 'event_schedule.eventdatetimestart',
                 'event_schedule.eventlocation',
                 'participants.participantfirstname',
-                'participants.participantid' // Needed for the check/uncheck logic
+                'participants.participantid' // Needed for the Set!
             )
             .orderBy('event_schedule.eventdatetimestart', 'asc');
 
-        // Logic 1: Create a "Lookup Set" so EJS can instantly know if [Event 1 + Kid A] is registered
-        // Format: "ScheduleID-ParticipantID"
+        // --- NEW LOGIC: Create the Lookup Set ---
+        // Creates a list like ["1-5", "2-8"] so EJS knows who is registered for what
         const registeredSet = new Set(
             rawRegistrations.map(r => `${r.scheduleid}-${r.participantid}`)
         );
 
-        // Logic 2: Group for "My Events" display
+        // Group for "My Events" display
         const groupedRegistrations = {};
         rawRegistrations.forEach(row => {
             if (!groupedRegistrations[row.scheduleid]) {
@@ -608,10 +635,12 @@ app.get("/events", async (req, res) => {
         });
         const myRegistrations = Object.values(groupedRegistrations);
 
+        // Pass 'registeredSet' to the view
         res.render("events", { upcoming, past, myParticipants, myRegistrations, registeredSet });
 
     } catch (err) {
         console.error("Error fetching events:", err);
+        // Pass empty set on error so page doesn't crash
         res.render("events", { upcoming: [], past: [], myParticipants: [], myRegistrations: [], registeredSet: new Set() }); 
     }
 });
@@ -735,96 +764,95 @@ app.post("/events/add", async (req, res) => {
     }
 });
 
-// --- SURVEY ROUTES ---
+// --- SURVEYS ---
 
 app.get("/surveys", (req, res) => {
     res.redirect("/survey"); 
 });
 
+// 1. SHOW SURVEY FORM
 app.get("/survey", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
-        // 1. Get the logged-in user's participant record
-        const participant = await knex('participants').where({ username: req.session.username }).first();
-
-        if (!participant) {
-            // If they are a user but not a participant (e.g. pure admin), show no events
-            return res.render("surveys", { events: [] });
-        }
-
-        // 2. Fetch only the events they have registered for
-        // We need the 'registrationid' to link the survey to the specific attendance
-        const events = await knex('registrations')
+        // Get events the user has actually registered for
+        // (So they can't review an event they didn't attend)
+        const myEvents = await knex('registrations')
             .join('event_schedule', 'registrations.scheduleid', '=', 'event_schedule.scheduleid')
             .join('events', 'event_schedule.eventid', '=', 'events.eventid')
-            .select(
-                'registrations.registrationid',
-                'events.eventname',
-                'event_schedule.eventdatetimestart'
-            )
-            .where('registrations.participantid', participant.participantid)
-            .orderBy('event_schedule.eventdatetimestart', 'desc');
+            .join('participants', 'registrations.participantid', '=', 'participants.participantid')
+            .where('participants.username', req.session.username)
+            .select('events.eventname', 'registrations.registrationid')
+            .distinct('events.eventname'); // distinct in case of multiple kids
 
-        res.render("surveys", { events });
-
+        res.render("surveys", { events: myEvents });
     } catch (err) {
         console.error("Error fetching survey events:", err);
         res.render("surveys", { events: [] });
     }
 });
 
+// 2. SUBMIT SURVEY (Updated for 'surveys' table)
 app.post("/survey/submit", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
-    // Destructure new form fields
-    const { 
-        registrationId, 
-        satisfaction, 
-        usefulness, 
-        instructor, 
-        recommendation, 
-        comments 
-    } = req.body;
+    // We now expect 'registrationId' from the form (see next step), 
+    // or we look it up if we stick to eventName.
+    // Let's stick to the current form logic (eventName) and find the ID here.
+    const { eventName, satisfaction, usefulness, comments } = req.body;
 
     try {
-        // 1. Calculate NPS Bucket (0-10 scale)
-        let npsBucket = 'Passive';
-        const recScore = parseInt(recommendation);
-        if (recScore >= 9) npsBucket = 'Promoter';
-        else if (recScore <= 6) npsBucket = 'Detractor';
+        // 1. Find the registration ID for this user & event
+        // (We grab the most recent one if they have multiple kids/dates)
+        const registration = await knex('registrations')
+            .join('event_schedule', 'registrations.scheduleid', '=', 'event_schedule.scheduleid')
+            .join('events', 'event_schedule.eventid', '=', 'events.eventid')
+            .join('participants', 'registrations.participantid', '=', 'participants.participantid')
+            .where('participants.username', req.session.username)
+            .where('events.eventname', eventName)
+            .orderBy('registrations.registrationid', 'desc')
+            .select('registrations.registrationid')
+            .first();
 
-        // 2. Calculate Overall Score (Average of the 5-point metrics)
-        // (Satisfaction + Usefulness + Instructor) / 3
-        const overallScore = ((parseInt(satisfaction) + parseInt(usefulness) + parseInt(instructor)) / 3).toFixed(2);
-
-        // 3. Insert into the new 'surveys' table
-        await knex('surveys').insert({
-            registrationid: registrationId,
-            surveysatisfactionscore: satisfaction,
-            surveyusefulnessscore: usefulness,
-            surveyinstructorscore: instructor,
-            surveyrecommendationscore: recScore,
-            surveyoverallscore: overallScore,
-            surveynpsbucket: npsBucket,
-            surveycomments: comments
-        });
+        if (registration) {
+            await knex('surveys').insert({
+                registrationid: registration.registrationid,
+                surveysatisfactionscore: satisfaction,
+                surveyusefulnessscore: usefulness,
+                surveycomments: comments,
+                surveysubmissiondate: new Date()
+            });
+        } else {
+            console.error("No registration found for this event to attach survey to.");
+        }
 
         res.redirect('/thankyou');
-
     } catch (err) {
         console.error("Survey submit error:", err);
         res.redirect('/survey');
     }
 });
 
+// 3. ADMIN: VIEW RESPONSES (Updated for 'surveys' table)
 app.get("/admin/survey-data", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') {
         return res.redirect('/');
     }
 
     try {
-        const responses = await knex('survey_responses').select('*').orderBy('response_id', 'desc');
+        // Join 4 tables to get from "Survey" -> "Event Name"
+        const responses = await knex('surveys')
+            .join('registrations', 'surveys.registrationid', '=', 'registrations.registrationid')
+            .join('event_schedule', 'registrations.scheduleid', '=', 'event_schedule.scheduleid')
+            .join('events', 'event_schedule.eventid', '=', 'events.eventid')
+            .select(
+                'events.eventname as event_name',
+                'surveys.surveysatisfactionscore as satisfaction_score',
+                'surveys.surveyusefulnessscore as usefulness_score',
+                'surveys.surveycomments as comments'
+            )
+            .orderBy('surveys.surveyid', 'desc');
+
         res.render("admin/surveyResponses", { responses });
     } catch (err) {
         console.error("Error fetching responses:", err);
