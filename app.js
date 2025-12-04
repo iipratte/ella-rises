@@ -981,28 +981,88 @@ app.get("/admin/users", async (req, res) => {
     }
 });
 
-// Show Add Form
+// --- ADMIN USER MAINTENANCE ROUTES ---
+
+// 1. Show Add User Form
 app.get("/admin/users/add", (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
     res.render("addUser");
 });
 
-// Process Add User
+// 2. Process Add User
 app.post("/admin/users/add", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
-    const { username, password, level } = req.body;
+    const { 
+        username, password, firstname, lastname, email, 
+        phone, dob, city, state, zip, level, parentflag,
+        schoolOrEmployer, fieldOfInterest // New fields
+    } = req.body;
 
     try {
-        await knex('users').insert({
-            username: username.toLowerCase(),
-            password, 
-            level
+        // 1. Check for duplicates
+        const existingUser = await knex('users')
+            .where({ username: username.toLowerCase() })
+            .orWhere({ email: email.toLowerCase() })
+            .first();
+
+        if (existingUser) {
+            return res.send("Error: Username or Email already exists.");
+        }
+
+        // 2. Perform Database Inserts
+        await knex.transaction(async (trx) => {
+            
+            // A. Insert into USERS table
+            await trx('users').insert({
+                username: username.toLowerCase(),
+                password, 
+                firstname,
+                lastname,
+                email: email.toLowerCase(),
+                phone,
+                dob: dob || null,
+                city,
+                state,
+                zip,
+                level,
+                // Parent Logic: Checkbox sends 'on', store as boolean true/false
+                parentflag: parentflag === 'on'
+            });
+
+            // B. If they are a standard USER and NOT A PARENT, create a Participant record
+            if (level === 'U' && parentflag !== 'on') {
+                
+                // Ensure Zip Code exists (Required for Participant Foreign Key)
+                if (zip) {
+                    await trx('zip_codes')
+                        .insert({ zip, city, state })
+                        .onConflict('zip')
+                        .ignore();
+                }
+
+                // Create Linked Participant Record
+                await trx('participants').insert({
+                    username: username.toLowerCase(), // The Link
+                    participantfirstname: firstname,
+                    participantlastname: lastname,
+                    participantemail: email.toLowerCase(),
+                    participantphone: phone,
+                    participantdob: dob || null,
+                    participantzip: zip,
+                    participantrole: 'Participant',
+                    // The new specific fields
+                    participantschooloremployer: schoolOrEmployer,
+                    participantfieldofinterest: fieldOfInterest
+                });
+            }
         });
+        
         res.redirect('/admin/users');
+
     } catch (err) {
         console.error("Error adding user:", err);
-        res.send("Error adding user. Username likely taken.");
+        res.send("Error adding user. Please check server logs.");
     }
 });
 
