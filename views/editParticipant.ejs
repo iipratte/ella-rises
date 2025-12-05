@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head> <!-- Title -->
     <title>Edit Participant - Ella Rises</title>
     <%- include('partials/head') %>
-</head>
+</head> <!-- HEader -->
 <body class="bg-light">
 
     <%- include('partials/header') %>
@@ -15,9 +15,9 @@
             </div>
 
             <div class="card-body p-4">
-                
+                <!-- Edit route -->
                 <form action="/participants/edit/<%= participant.participantid %>" method="POST">
-
+                        <!-- Form -->
                     <h6 class="text-uppercase text-muted fw-bold mb-3 small">Personal Information</h6>
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -44,7 +44,7 @@
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Date of Birth</label>
-                            <% 
+                            <%  <!-- Change date formatt -->
                                 // Format date for input field (YYYY-MM-DD)
                                 let dobVal = '';
                                 if (participant.participantdob) {
@@ -71,14 +71,14 @@
                             <input type="text" class="form-control" name="interest" value="<%= participant.participantfieldofinterest %>">
                         </div>
                     </div>
-
+ <!-- Checks level -->
                     <% if (user.role === 'Manager') { %>
                         <div class="alert alert-light border mb-4">
                             <label class="form-label fw-bold text-primary">Link to User Account (Optional)</label>
                             <input type="text" class="form-control" name="username" placeholder="Username..." value="<%= participant.username || '' %>">
                         </div>
                     <% } %>
-
+                            <!-- Nav to participants -->
                     <div class="d-flex justify-content-between">
                         <a href="/participants" class="btn btn-outline-secondary">Cancel</a>
                         <button type="submit" class="btn btn-primary px-4">Save Changes</button>
@@ -88,7 +88,7 @@
             </div>
         </div>
     </div>
-
+ <!-- Footer -->
     <%- include('partials/footer') %>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

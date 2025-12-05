@@ -14,20 +14,20 @@
     --er-bg: #FFFAF4;            /* Warm White / Cream Background */
     --er-white: #FFFFFF;
     
-    /* UI VARIABLES */
+    /* UI  */
     --radius-sm: 8px;
     --radius-lg: 20px;
     --shadow-soft: 0 10px 40px rgba(249, 175, 177, 0.15); /* Pink-tinted glow */
     --shadow-hover: 0 15px 35px rgba(58, 63, 59, 0.1);    /* Charcoal shadow */
     
-    /* FONTS */
+    /* Fonts */
     --font-heading: 'Playfair Display', serif; 
     --font-body: 'Montserrat', sans-serif;
 }
 
-/* --- 1. BASE STYLES --- */
+/* --- base stylz --- */
 
-/* Set html to full height */
+/* Set html height */
 html {
     height: 100%;
 }
@@ -38,14 +38,14 @@ body {
     color: var(--er-text);
     line-height: 1.7;
     
-    /* STICKY FOOTER SETUP */
+    /* sticky footer setup */
     display: flex;
     flex-direction: column;
-    min-height: 100vh; /* Forces body to be at least the height of the screen */
+    min-height: 100vh; /* Forces body with min height of screen  */
     margin: 0;
 }
 
-/* Explicitly force the footer to the bottom */
+/* force footer to bottom  */
 footer {
     margin-top: auto !important;
     width: 100%;
@@ -57,14 +57,14 @@ h1, h2, h3, h4, h5, .navbar-brand {
     font-weight: 700;
 }
 
-/* --- 2. NAVIGATION (Light & Clean) --- */
+/* --- 2. Navigation --- */
 .navbar {
     background-color: var(--er-white) !important;
     padding: 0.5rem 0;
     box-shadow: 0 4px 20px rgba(0,0,0,0.03); /* Very subtle shadow */
 }
 
-/* Links are now Charcoal (Dark), turning Pink on hover */
+/* Links  Charcoal to  turning Pink on hover */
 .nav-link {
     font-family: var(--font-body);
     font-weight: 600;
@@ -82,14 +82,14 @@ h1, h2, h3, h4, h5, .navbar-brand {
     border-radius: 20px;
 }
 
-/* User Greeting Text */
+/* User Greeting */
 .navbar-text {
     color: var(--er-charcoal) !important;
     font-weight: 600;
     font-size: 0.85rem;
 }
 
-/* --- 3. BUTTONS (Pastel Power) --- */
+/* --- 3. Buttons --- */
 .btn {
     border-radius: 50px;
     padding: 0.7rem 2rem;
@@ -99,7 +99,7 @@ h1, h2, h3, h4, h5, .navbar-brand {
     transition: all 0.3s ease;
 }
 
-/* Primary = Charcoal (High Contrast) or Sage? Let's go Charcoal for contrast */
+/* Primary = Charcoal */
 .btn-primary {
     background-color: var(--er-charcoal);
     color: white;
@@ -136,13 +136,13 @@ h1, h2, h3, h4, h5, .navbar-brand {
     color: white;
 }
 
-/* --- 4. CARDS (Airy) --- */
+/* --- 4. Cards --- */
 .card {
     border: none;
     border-radius: var(--radius-lg);
     background: white;
     box-shadow: var(--shadow-soft);
-    border: 1px solid rgba(0,0,0,0.02); /* Tiny border for definition */
+    border: 1px solid rgba(0,0,0,0.02); /* Tiny border  */
 }
 
 .card-header {
@@ -151,18 +151,18 @@ h1, h2, h3, h4, h5, .navbar-brand {
     padding: 1.5rem;
 }
 
-/* Overrides for specific card headers */
+/* Overrides for specific headers */
 .bg-primary { background-color: var(--er-sage) !important; } /* Sage Green Headers */
 .text-primary { color: var(--er-charcoal) !important; }
 
-/* --- 5. TABLES --- */
+/* --- 5. Tables --- */
 
-/* NEW RULE: Vertically center all table content */
+/* Vertically center tables */
 .table td, .table th {
     vertical-align: middle;
 }
 
-/* (Existing Header Styles) */
+/* header styles */
 .table thead th {
     background-color: var(--er-sage) !important; 
     color: white;
@@ -179,7 +179,7 @@ h1, h2, h3, h4, h5, .navbar-brand {
     background-color: var(--er-bg); 
 }
 
-/* --- 6. FORMS --- */
+/* --- 6. Forms --- */
 .form-control, .form-select {
     background-color: var(--er-bg);
     border: 1px solid #eee;
@@ -192,7 +192,7 @@ h1, h2, h3, h4, h5, .navbar-brand {
     box-shadow: 0 0 0 4px rgba(249, 175, 177, 0.2); /* Pink Glow */
 }
 
-/* --- 7. UTILITIES --- */
+/* --- 7. Utilities --- */
 /* Selection Color */
 ::selection {
     background: var(--er-primary);
@@ -209,15 +209,15 @@ body, html {
    FIXES: HERO VISIBILITY & ANIMATION
    ========================================= */
 
-/* 1. FORCE HERO TEXT WHITE */
+/* 1. Force hero text white */
 /* The main title needs to be white to show up against the dark photo overlay */
 header h1, header p.lead {
     color: #ffffff !important;
-    text-shadow: 0 2px 15px rgba(0, 0, 0, 0.6); /* Adds a shadow to pop against the image */
+    text-shadow: 0 2px 15px rgba(0, 0, 0, 0.6); /* Adds a shadow to pop */
 }
 
-/* 2. FIX "VIEW EVENTS" BUTTON */
-/* We restore the 'outline-light' button to actually be White for the dark header */
+/* 2. Fix "View Events" Button */
+/* We restore the 'outline light' button to actually be White for the dark header */
 .btn-outline-light {
     border: 2px solid #ffffff !important;
     color: #ffffff !important;
@@ -225,10 +225,10 @@ header h1, header p.lead {
 
 .btn-outline-light:hover {
     background-color: #ffffff !important;
-    color: var(--er-charcoal) !important; /* Turns dark when you hover */
+    color: var(--er-charcoal) !important; /* Turns dark when hover */
 }
 
-/* 3. RESTORE LOGO SPIN ANIMATION */
+/* 3.  Logo Spin Animation */
 .navbar-brand img {
     transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Bouncy spin */
     transform-origin: center center;
@@ -239,7 +239,7 @@ header h1, header p.lead {
     transform: rotate(360deg);
 }
 
-/* FIX: Header Buttons (Charcoal on White) */
+/* Fix: Header Buttons */
 .btn-outline-dark {
     color: var(--er-charcoal);
     border: 1px solid var(--er-charcoal);

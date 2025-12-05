@@ -3,8 +3,13 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm py-1">
   <div class="container-fluid">
     <a class="navbar-brand" href="/">
+
+      <!-- Logo Element -->
       <img src="/images/logo.png" alt="Ella Rises" height="65" class="d-inline-block align-text-top">
     </a>
+
+    <!-- Google Translate Element -->
+    <div id="google_translate_element" style="display:none;"></div>
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
@@ -13,15 +18,18 @@
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         
+        <!-- Home button -->
         <li class="nav-item">
           <a class="nav-link" href="/">Home</a>
         </li>
 
         <% if (user) { %>
           <li class="nav-item">
+            <!-- Google Translate Element -->
             <a class="nav-link" href="/events">Events</a>
           </li>
           
+          <!-- Links to different views if user -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="communityDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                Community
@@ -33,6 +41,7 @@
             </ul>
           </li>
 
+          <!-- Links to different views if user -->
           <li class="nav-item">
             <a class="nav-link" href="/survey">Take Survey</a>
           </li>
@@ -43,6 +52,7 @@
             <a class="nav-link" href="/milestones">Milestones</a>
           </li>
 
+          <!-- Links to different views if user or admin -->
           <% if (user.role === 'Manager' || user.isAdmin) { %>
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle text-warning" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -60,6 +70,15 @@
 
       <div class="d-flex align-items-center gap-2 ms-3">
 
+        <!-- Translate toggle button (always visible, even when logged out) -->
+        <button class="btn btn-outline-secondary rounded-pill px-3"
+                type="button"
+                onclick="doGTranslate('en|es')"
+                id="translateBtn">
+          Español
+        </button>
+
+        <!-- Donate, login, and signup buttons -->
         <% if (!user) { %>
           <a href="/donate" class="btn btn-warning fw-bold text-dark rounded-pill px-4" style="font-size: 0.75rem;">
             Donate Now
@@ -78,6 +97,8 @@
               <span class="fw-bold">Hi, <%= user.firstName %></span>
             </button>
             
+
+            <!-- Account and logout buttons -->
             <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="userMenuButton">
               <li>
                 <a class="dropdown-item py-2" href="/account">
