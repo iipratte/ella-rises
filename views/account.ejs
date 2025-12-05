@@ -51,8 +51,7 @@
                         </div>
                     </div>
 
-                    <!-- Show Participant Details only for not manager not admin not parent users -->
-                    <% if (!(user.role === 'Manager' || user.isAdmin) && (!user.parentflag || user.parentflag === false || user.parentflag === 0 || user.parentflag === 'f')) { %>
+                    <% if (user.parentflag === false || user.parentflag === 0 || user.parentflag === 'f') { %>
                         <h6 class="text-uppercase text-muted fw-bold mb-3 small">Participant Details</h6>
 
                         <div class="row mb-4">
@@ -143,14 +142,7 @@
 
                     <!-- Cancel goes to dashboard for admins or home for users -->
                     <div class="d-flex justify-content-end gap-2">
-                        <a
-                            <% if (user.role === 'Manager' || user.isAdmin) { %>
-                                href="/admin/dashboard"
-                            <% } else { %>
-                                href="/"
-                            <% } %>
-                            class="btn btn-outline-secondary">Cancel</a>
-
+                        <a href="/dashboard" class="btn btn-outline-secondary">Cancel</a>
                         <button type="submit" class="btn btn-primary px-4">Save Changes</button>
                     </div>
                 </form>
