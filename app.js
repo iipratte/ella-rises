@@ -1232,21 +1232,58 @@ app.post("/admin/donations/add", async (req, res) => {
     }
 });
 
-// 4. SHOW EDIT FORM
+// 4. SHOW EDIT FORM (With Search & Select Logic)
 app.get("/admin/donations/edit/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
+    const { firstName, lastName, username, selectedId } = req.query;
+
     try {
+        // A. Fetch the Donation Record
         const donation = await knex('donations').where({ donationid: req.params.id }).first();
-        
         if (!donation) return res.redirect('/admin/donations');
 
-        // Fetch the *current* donor for display
-        const currentDonor = await knex('participants')
+        // B. Determine the "Selected Participant" (The one displayed in the form)
+        // Default: The original donor
+        let selectedParticipant = await knex('participants')
             .where({ participantid: donation.participantid })
             .first();
 
-        res.render("editDonation", { donation, currentDonor });
+        // Override: If user clicked "Select" on a search result, use that ID instead
+        if (selectedId) {
+            const newSelection = await knex('participants')
+                .where({ participantid: selectedId })
+                .first();
+            if (newSelection) {
+                selectedParticipant = newSelection;
+            }
+        }
+
+        // C. Handle Search Results (for the table)
+        let participants = [];
+        if (firstName || lastName || username) {
+            let query = knex('participants')
+                .select('participantid', 'participantfirstname', 'participantlastname', 'participantemail')
+                .orderBy('participantlastname', 'asc')
+                .limit(50);
+
+            if (firstName) query = query.where('participantfirstname', 'ilike', `%${firstName}%`);
+            if (lastName) query = query.where('participantlastname', 'ilike', `%${lastName}%`);
+            if (username) query = query.where('username', 'ilike', `%${username}%`);
+
+            participants = await query;
+        }
+
+        // D. Render
+        res.render("editDonation", { 
+            donation, 
+            selectedParticipant, // Who is currently linked (or about to be linked)
+            participants,        // Search results
+            searchFirstName: firstName || '',
+            searchLastName: lastName || '',
+            searchUsername: username || ''
+        });
+
     } catch (err) {
         console.error("Error loading edit form:", err);
         res.redirect('/admin/donations');
@@ -1257,12 +1294,14 @@ app.get("/admin/donations/edit/:id", async (req, res) => {
 app.post("/admin/donations/edit/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
-    const { amount, date, notes } = req.body;
+    // FIX: Added participantId to the destructured object so we can update the donor
+    const { participantId, amount, date, notes } = req.body;
 
     try {
         await knex('donations')
             .where({ donationid: req.params.id })
             .update({
+                participantid: participantId, // Update the donor link
                 donationamount: amount,
                 donationdate: date,
                 donationnotes: notes
