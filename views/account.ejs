@@ -5,126 +5,153 @@
     <%- include('partials/head') %>
 </head>
 <body class="bg-light">
-
     <%- include('partials/header') %>
 
     <div class="container mt-5 mb-5" style="max-width: 800px;">
         <div class="card shadow border-0">
             <div class="card-header bg-white py-3 border-bottom">
-                <h4 class="mb-0 fw-bold text-primary" style="font-family: 'DM Serif Display', serif;">Account Settings</h4>
+                <h4 class="mb-0 fw-bold text-primary" style="font-family: 'DM Serif Display', serif;">
+                    Account Settings
+                </h4>
             </div>
-            <div class="card-body p-4">
 
+            <div class="card-body p-4">
+                <!-- Success alert -->
                 <% if (typeof success !== 'undefined' && success) { %>
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle-fill me-2"></i> Account updated successfully!
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        Account updated successfully!
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 <% } %>
 
+                <!-- Error alert  -->
                 <% if (typeof error !== 'undefined' && error) { %>
                     <div class="alert alert-danger" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i> <%= error %>
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <%= error %>
                     </div>
                 <% } %>
 
+                <!-- update account information -->
                 <form action="/account" method="POST">
-                    
                     <h6 class="text-uppercase text-muted fw-bold mb-3 small">Login Information</h6>
+
                     <div class="row mb-4">
                         <div class="col-md-6 mb-3">
                             <label for="username" class="form-label fw-bold">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" value="<%= user.username %>" required>
+                            <input type="text" class="form-control" id="username" name="username"
+                                   value="<%= user.username %>" required>
                         </div>
+
                         <div class="col-md-6 mb-3">
                             <label for="password" class="form-label fw-bold">New Password</label>
-                            <input type="password" class="form-control" id="password" name="password" placeholder="Leave blank to keep current password">
+                            <input type="password" class="form-control" id="password" name="password"
+                                   placeholder="Leave blank to keep current password">
                         </div>
                     </div>
 
-                    <% if (!(user.role === 'Manager' || user.isAdmin) && (!user.parentflag || user.parentflag === false || user.parentflag === 0 || user.parentflag === 'f')) { %>
+                    <% if (user.parentflag === false || user.parentflag === 0 || user.parentflag === 'f') { %>
                         <h6 class="text-uppercase text-muted fw-bold mb-3 small">Participant Details</h6>
+
                         <div class="row mb-4">
                             <div class="col-md-6 mb-3">
                                 <label for="schoolOrEmployer" class="form-label fw-bold">School or Employer</label>
-                                <input type="text" class="form-control" id="schoolOrEmployer" name="schoolOrEmployer" 
-                                       value="<%= (typeof participant !== 'undefined' ? participant.participantschooloremployer : '') %>" 
+                                <input type="text" class="form-control" id="schoolOrEmployer" name="schoolOrEmployer"
+                                       value="<%= (typeof participant !== 'undefined' ? participant.participantschooloremployer : '') %>"
                                        placeholder="e.g. UVU or Local Business">
                             </div>
+
                             <div class="col-md-6 mb-3">
                                 <label for="fieldOfInterest" class="form-label fw-bold">Field of Interest</label>
-                                <input type="text" class="form-control" id="fieldOfInterest" name="fieldOfInterest" 
-                                       value="<%= (typeof participant !== 'undefined' ? participant.participantfieldofinterest : '') %>" 
+                                <input type="text" class="form-control" id="fieldOfInterest" name="fieldOfInterest"
+                                       value="<%= (typeof participant !== 'undefined' ? participant.participantfieldofinterest : '') %>"
                                        placeholder="e.g. STEM, Arts, Leadership">
                             </div>
                         </div>
+
                         <hr class="my-4 text-muted opacity-25">
                     <% } %>
 
                     <h6 class="text-uppercase text-muted fw-bold mb-3 small">Personal Details</h6>
+
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="firstname" class="form-label">First Name</label>
-                            <input type="text" class="form-control" id="firstname" name="firstname" value="<%= user.firstname %>" required>
+                            <input type="text" class="form-control" id="firstname" name="firstname"
+                                   value="<%= user.firstname %>" required>
                         </div>
+
                         <div class="col-md-6">
                             <label for="lastname" class="form-label">Last Name</label>
-                            <input type="text" class="form-control" id="lastname" name="lastname" value="<%= user.lastname %>" required>
+                            <input type="text" class="form-control" id="lastname" name="lastname"
+                                   value="<%= user.lastname %>" required>
                         </div>
                     </div>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="email" class="form-label">Email Address</label>
-                            <input type="email" class="form-control" id="email" name="email" value="<%= user.email %>" required>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   value="<%= user.email %>" required>
                         </div>
+
                         <div class="col-md-6">
                             <label for="phone" class="form-label">Phone Number</label>
-                            <input type="tel" class="form-control" id="phone" name="phone" value="<%= user.phone %>">
+                            <input type="tel" class="form-control" id="phone" name="phone"
+                                   value="<%= user.phone %>">
                         </div>
                     </div>
 
+                    <!-- Normalize DOB from DB to YYYYMMDD  -->
                     <div class="mb-4">
                         <label for="userdob" class="form-label">Date of Birth</label>
                         <% 
                             let dobValue = '';
-                            // Handle both 'dob' (DB column) and 'userdob' (possible alias)
                             let rawDob = user.dob || user.userdob;
                             if (rawDob) {
                                 const d = new Date(rawDob);
                                 dobValue = d.toISOString().split('T')[0];
                             }
                         %>
-                        <input type="date" class="form-control" id="userdob" name="userdob" value="<%= dobValue %>">
+                        <input type="date" class="form-control" id="userdob" name="userdob"
+                               value="<%= dobValue %>">
                     </div>
 
                     <h6 class="text-uppercase text-muted fw-bold mb-3 small">Address</h6>
+
                     <div class="row mb-4">
                         <div class="col-md-6 mb-3">
                             <label for="city" class="form-label">City</label>
-                            <input type="text" class="form-control" id="city" name="city" value="<%= user.city %>">
+                            <input type="text" class="form-control" id="city" name="city"
+                                   value="<%= user.city %>">
                         </div>
+
                         <div class="col-md-3 mb-3">
                             <label for="state" class="form-label">State</label>
-                            <input type="text" class="form-control" id="state" name="state" value="<%= user.state %>" maxlength="2">
+                            <input type="text" class="form-control" id="state" name="state"
+                                   value="<%= user.state %>" maxlength="2">
                         </div>
+
                         <div class="col-md-3 mb-3">
                             <label for="zip" class="form-label">Zip Code</label>
-                            <input type="text" class="form-control" id="zip" name="zip" value="<%= user.zip %>">
+                            <input type="text" class="form-control" id="zip" name="zip"
+                                   value="<%= user.zip %>">
                         </div>
                     </div>
 
+                    <!-- Cancel goes to dashboard for admins or home for users -->
                     <div class="d-flex justify-content-end gap-2">
-                        <a <% if (user.role === 'Manager' || user.isAdmin) { %> href="/admin/dashboard" <% } else { %> href="/" <% } %> class="btn btn-outline-secondary">Cancel</a>
+                        <a href="/dashboard" class="btn btn-outline-secondary">Cancel</a>
                         <button type="submit" class="btn btn-primary px-4">Save Changes</button>
                     </div>
-
                 </form>
             </div>
         </div>
     </div>
 
     <%- include('partials/footer') %>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
