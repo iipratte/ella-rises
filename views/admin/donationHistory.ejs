@@ -23,13 +23,14 @@
                     </h4>
                 </div>
                 
-                <a href="/admin/donations/add" class="btn btn-primary shadow-sm d-flex align-items-center">
-                    <i class="bi bi-plus-lg me-2"></i> Record Donation
-                </a>
+                <% if (user && user.role === 'Manager') { %>
+                    <a href="/admin/donations/add" class="btn btn-primary shadow-sm d-flex align-items-center">
+                        <i class="bi bi-plus-lg me-2"></i> Record Donation
+                    </a>
+                <% } %>
             </div>
         </div>
 
-        <!-- SEARCH FILTER -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body bg-white p-4">
                 <form action="/admin/donations" method="GET" class="row g-3 align-items-end">
@@ -60,7 +61,9 @@
                                 <th>Email</th>
                                 <th>Notes</th>
                                 <th class="text-end">Amount</th>
-                                <th class="text-end pe-4">Actions</th>
+                                <% if (user && user.role === 'Manager') { %>
+                                    <th class="text-end pe-4">Actions</th>
+                                <% } %>
                             </tr>
                         </thead>
                         <tbody>
@@ -90,18 +93,21 @@
                                         <td class="text-end fw-bold text-success">
                                             $<%= Number(d.donationamount).toLocaleString('en-US', {minimumFractionDigits: 2}) %>
                                         </td>
-                                        <td class="text-end pe-4">
-                                            <div class="d-flex justify-content-end gap-2">
-                                                <a href="/admin/donations/edit/<%= d.donationid %>" class="btn btn-sm btn-outline-secondary" title="Edit">
-                                                    Edit
-                                                </a>
-                                                <form action="/admin/donations/delete/<%= d.donationid %>" method="POST" class="d-inline" onsubmit="return confirm('Delete this donation record?');">
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                                                        <i class="bi bi-trash-fill"></i>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
+                                        
+                                        <% if (user && user.role === 'Manager') { %>
+                                            <td class="text-end pe-4">
+                                                <div class="d-flex justify-content-end gap-2">
+                                                    <a href="/admin/donations/edit/<%= d.donationid %>" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                        Edit
+                                                    </a>
+                                                    <form action="/admin/donations/delete/<%= d.donationid %>" method="POST" class="d-inline" onsubmit="return confirm('Delete this donation record?');">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                            <i class="bi bi-trash-fill"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        <% } %>
                                     </tr>
                                 <% }) %>
                             <% } %>
