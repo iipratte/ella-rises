@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head> <!-- Title -->
     <title>Edit Donation - Ella Rises</title>
     <%- include('partials/head') %>
 </head>
 <body class="bg-light">
-
+ <!-- HEader -->
     <%- include('partials/header') %>
 
     <div class="container mt-5 mb-5" style="max-width: 800px;">
@@ -14,7 +14,7 @@
             <h1 class="fw-bold text-primary mb-0" style="font-family: 'DM Serif Display', serif;">Edit Donation Record</h1>
             <a href="/admin/donations" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> Back to History
-            </a>
+            </a> <!-- NAv to donations -->
         </div>
 
         <div class="row g-4">
@@ -26,7 +26,7 @@
                             <i class="bi bi-search me-1"></i> Change Donor (Optional)
                         </h5>
                     </div>
-                    <div class="card-body p-4">
+                    <div class="card-body p-4"> <!-- Edit route --> <!-- Form -->
                         <form action="/admin/donations/edit/<%= donation.donationid %>" method="GET" class="row g-3 align-items-end">
                             <div class="col-md-3">
                                 <label class="form-label fw-bold small">First Name</label>
@@ -43,13 +43,13 @@
                             <div class="col-md-3 d-grid">
                                 <button type="submit" class="btn btn-secondary btn-sm">Search</button>
                             </div>
-                        </form>
+                        </form> <!-- Form -->
 
-                        <% if (participants && participants.length > 0) { %>
+                        <% if (participants && participants.length > 0) { %> <!-- Loop -->
                             <div class="table-responsive mt-4">
                                 <table class="table table-sm table-hover mb-0">
                                     <thead class="table-light">
-                                        <tr>
+                                        <tr> <!-- Tabel -->
                                             <th>Name</th>
                                             <th>Email</th>
                                             <th></th>
@@ -57,20 +57,20 @@
                                     </thead>
                                     <tbody>
                                         <% participants.forEach(p => { %>
-                                            <tr>
+                                            <tr> <!-- Pulls data -->
                                                 <td><%= p.participantfirstname %> <%= p.participantlastname %></td>
                                                 <td class="text-muted small"><%= p.participantemail %></td>
                                                 <td class="text-end">
                                                     <a href="/admin/donations/edit/<%= donation.donationid %>?selectedId=<%= p.participantid %>" 
                                                        class="btn btn-sm btn-outline-primary py-0">
-                                                        Select
+                                                        Select <!--- Using ID -->
                                                     </a>
                                                 </td>
                                             </tr>
                                         <% }) %>
                                     </tbody>
                                 </table>
-                            </div>
+                            </div> <!-- Checks info -->
                         <% } else if (searchFirstName || searchLastName || searchUsername) { %>
                             <div class="alert alert-warning mt-3 mb-0 small">No participants found matching your search.</div>
                         <% } %>
@@ -91,11 +91,11 @@
                                 <div class="small text-uppercase fw-bold text-muted">Currently Assigned To:</div>
                                 <div class="fw-bold fs-5">
                                     <%= selectedParticipant.participantfirstname %> <%= selectedParticipant.participantlastname %>
-                                </div>
+                                </div> <!-- Pulls participant-->
                                 <div class="small text-muted"><%= selectedParticipant.participantemail %></div>
                             </div>
                         </div>
-
+ <!-- Pulls ID info -->
                         <form action="/admin/donations/edit/<%= donation.donationid %>" method="POST">
                             
                             <input type="hidden" name="participantId" value="<%= selectedParticipant.participantid %>">
@@ -108,7 +108,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label for="date" class="form-label fw-bold">Date</label>
-                                    <% 
+                                    <%  <!-- Changes format -->
                                         let dateVal = '';
                                         if (donation.donationdate) {
                                             dateVal = new Date(donation.donationdate).toISOString().split('T')[0];
@@ -123,7 +123,7 @@
                                 <textarea class="form-control" id="notes" name="notes" rows="2"><%= donation.donationnotes %></textarea>
                             </div>
 
-                            <div class="d-flex justify-content-between">
+                            <div class="d-flex justify-content-between"> <!-- NAv to donations -->
                                 <a href="/admin/donations" class="btn btn-outline-secondary">Cancel</a>
                                 <button type="submit" class="btn btn-primary px-4">Save Changes</button>
                             </div>
@@ -135,7 +135,7 @@
 
         </div>
     </div>
-
+ <!-- Footer -->
     <%- include('partials/footer') %>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
