@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-<head> <!-- Title -->
+<head>
     <title>Donation History - Ella Rises</title>
     <%- include('../partials/head') %> 
 </head>
 <body class="bg-light">
- <!-- HEader -->
+
     <%- include('../partials/header') %>
 
     <div class="container mt-5 mb-5">
@@ -20,12 +20,32 @@
                     <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Total Raised</small>
                     <h4 class="text-success fw-bold mb-0">
                         $<%= donations.reduce((sum, d) => sum + Number(d.donationamount), 0).toLocaleString('en-US', {minimumFractionDigits: 2}) %>
-                    </h4> <!-- Total donations -->
+                    </h4>
                 </div>
                 
                 <a href="/admin/donations/add" class="btn btn-primary shadow-sm d-flex align-items-center">
                     <i class="bi bi-plus-lg me-2"></i> Record Donation
-                </a> <!-- Add donation route -->
+                </a>
+            </div>
+        </div>
+
+        <!-- SEARCH FILTER -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body bg-white p-4">
+                <form action="/admin/donations" method="GET" class="row g-3 align-items-end">
+                    <div class="col-md-10">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Search Donor or Email</label>
+                        <input type="text" class="form-control" name="searchDonor" value="<%= searchDonor %>" placeholder="Type a name...">
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button type="submit" class="btn btn-secondary">Search</button>
+                    </div>
+                    <% if (searchDonor) { %>
+                        <div class="col-12 text-end mt-2">
+                            <a href="/admin/donations" class="text-decoration-none small text-danger"><i class="bi bi-x-circle"></i> Clear Filters</a>
+                        </div>
+                    <% } %>
+                </form>
             </div>
         </div>
 
@@ -34,7 +54,7 @@
                 <div class="table-responsive">
                     <table class="table table-hover table-striped mb-0 align-middle">
                         <thead class="table-dark">
-                            <tr> <!-- Table -->
+                            <tr>
                                 <th class="ps-4">Date</th>
                                 <th>Donor Name</th>
                                 <th>Email</th>
@@ -43,7 +63,7 @@
                                 <th class="text-end pe-4">Actions</th>
                             </tr>
                         </thead>
-                        <tbody> <!-- loop for table -->
+                        <tbody>
                             <% if (donations.length === 0) { %>
                                 <tr><td colspan="6" class="text-center py-5 text-muted">No donations recorded yet.</td></tr>
                             <% } else { %>
@@ -73,11 +93,11 @@
                                         <td class="text-end pe-4">
                                             <div class="d-flex justify-content-end gap-2">
                                                 <a href="/admin/donations/edit/<%= d.donationid %>" class="btn btn-sm btn-outline-secondary" title="Edit">
-                                                    Edit <!-- Edit route -->
+                                                    Edit
                                                 </a>
                                                 <form action="/admin/donations/delete/<%= d.donationid %>" method="POST" class="d-inline" onsubmit="return confirm('Delete this donation record?');">
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                                                        <i class="bi bi-trash-fill"></i> <!-- Delete route -->
+                                                        <i class="bi bi-trash-fill"></i>
                                                     </button>
                                                 </form>
                                             </div>
@@ -90,8 +110,8 @@
                 </div>
             </div>
         </div>
-    </div> 
- <!-- Footer -->
+    </div>
+
     <%- include('../partials/footer') %>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

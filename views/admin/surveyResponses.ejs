@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head> <!-- Title -->
+<head>
     <title>Survey Responses - Ella Rises</title>
     <%- include('../partials/head') %> 
     <style>
@@ -32,7 +32,7 @@
     </style>
 </head>
 <body class="bg-light">
- <!-- HEader -->
+
     <%- include('../partials/header') %>
 
     <div class="container mt-5 mb-5">
@@ -40,6 +40,26 @@
             <div>
                 <h1 class="text-primary fw-bold" style="font-family: 'DM Serif Display', serif;">Survey Responses</h1>
                 <p class="text-muted">Feedback submitted by participants after events.</p>
+            </div>
+        </div>
+
+        <!-- SEARCH FILTER -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body bg-white p-4">
+                <form action="/admin/survey-data" method="GET" class="row g-3 align-items-end">
+                    <div class="col-md-10">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Search Event or Participant</label>
+                        <input type="text" class="form-control" name="searchSurvey" value="<%= searchSurvey %>" placeholder="Type event name or participant...">
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button type="submit" class="btn btn-secondary">Search</button>
+                    </div>
+                    <% if (searchSurvey) { %>
+                        <div class="col-12 text-end mt-2">
+                            <a href="/admin/survey-data" class="text-decoration-none small text-danger"><i class="bi bi-x-circle"></i> Clear Filters</a>
+                        </div>
+                    <% } %>
+                </form>
             </div>
         </div>
 

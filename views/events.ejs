@@ -68,6 +68,30 @@
             </div>
         <% } %>
 
+        <!-- SEARCH FILTER SECTION -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body bg-white p-4">
+                <form action="/events" method="GET" class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Event Name</label>
+                        <input type="text" class="form-control" name="searchEvent" value="<%= searchEvent %>" placeholder="e.g. Workshop...">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Location</label>
+                        <input type="text" class="form-control" name="searchLocation" value="<%= searchLocation %>" placeholder="e.g. UVU...">
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button type="submit" class="btn btn-primary">Filter</button>
+                    </div>
+                    <% if (searchEvent || searchLocation) { %>
+                        <div class="col-12 text-end mt-2">
+                            <a href="/events" class="text-decoration-none small text-danger"><i class="bi bi-x-circle"></i> Clear Filters</a>
+                        </div>
+                    <% } %>
+                </form>
+            </div>
+        </div>
+
         <div class="accordion shadow-sm border-0" id="eventsAccordion">
             
             <div class="accordion-item border-0 mb-3 rounded overflow-hidden shadow-sm">
@@ -90,13 +114,14 @@
                                             <span class="text-uppercase small text-muted fw-bold"><%= new Date(event.eventdatetimestart).toLocaleString('default', { month: 'short' }) %></span>
                                             <div class="small text-muted mt-1"><%= new Date(event.eventdatetimestart).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' }) %></div>
                                         </div>
+                
                                         <div class="col-md-5 ps-md-4">
                                             <span class="badge rounded-pill mb-2 <%= event.eventtype === 'Leadership' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger' %>"><%= event.eventtype %></span>
                                             <h5 class="fw-bold mb-1"><%= event.eventname %></h5>
                                             <p class="text-muted small mb-0"><i class="bi bi-geo-alt-fill me-1"></i> <%= event.eventlocation %></p>
                                         </div>
                                         <div class="col-md-5 text-md-end">
-                                            
+        
                                             <% if (user && user.role === 'Manager') { %>
                                                 <div class="d-inline-flex gap-1 me-3 align-items-center">
                                                     <a href="/events/edit/<%= event.eventid %>" class="btn btn-sm btn-outline-secondary rounded-circle" title="Edit" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
@@ -121,21 +146,17 @@
                                             <% } else if (!user.isParent) { %>
                                                 <% 
                                                     const kidId = myParticipants[0].participantid;
-                                                    const isRegistered = registeredSet.has(event.scheduleid + '-' + kidId); 
-                                                    // Note: Using scheduleid/eventid interchangably if logic allows, 
-                                                    // but registeredSet uses whatever ID you stored. 
-                                                    // With new logic it's eventid-participantid
-                                                    const isRegNew = registeredSet.has(event.eventid + '-' + kidId);
+                                                    const isRegNew = registeredSet.has(event.scheduleid + '-' + kidId); 
                                                 %>
                                                 <% if (isRegNew) { %>
                                                     <form action="/events/unregister" method="POST" class="d-inline">
-                                                        <input type="hidden" name="eventId" value="<%= event.eventid %>">
+                                                        <input type="hidden" name="scheduleId" value="<%= event.scheduleid %>">
                                                         <input type="hidden" name="participantId" value="<%= kidId %>">
                                                         <button type="submit" class="btn btn-danger btn-sm px-4 rounded-pill shadow-sm">Unregister</button>
                                                     </form>
                                                 <% } else { %>
                                                     <form action="/events/register" method="POST" class="d-inline">
-                                                        <input type="hidden" name="eventId" value="<%= event.eventid %>">
+                                                        <input type="hidden" name="scheduleId" value="<%= event.scheduleid %>">
                                                         <input type="hidden" name="participantId" value="<%= kidId %>">
                                                         <button type="submit" class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">Join</button>
                                                     </form>
@@ -144,7 +165,7 @@
                                                 <button type="button" class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm" 
                                                         data-bs-toggle="modal" 
                                                         data-bs-target="#registerModal"
-                                                        onclick="setModalData('<%= event.eventid %>', '<%= event.eventname %>')">
+                                                        onclick="setModalData('<%= event.scheduleid %>', '<%= event.eventname %>')">
                                                     Manage...
                                                 </button>
                                             <% } %>
@@ -210,7 +231,7 @@
                             </div>
                             <div class="form-text small text-muted mt-2">Uncheck a box to cancel registration.</div>
                         </div>
-                        <input type="hidden" name="eventId" id="modalScheduleId">
+                        <input type="hidden" name="scheduleId" id="modalScheduleId">
                     </div>
                     <div class="modal-footer border-0">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -226,18 +247,15 @@
     
     <script>
         // Pass data to JS
-        // Use logic to prevent syntax error in editor
-        const rawList = '<%- JSON.stringify(Array.from(registeredSet)) %>';
-        const registeredList = JSON.parse(rawList);
-
-        function setModalData(eventId, eventName) {
-            document.getElementById('modalScheduleId').value = eventId;
+        const registeredList = <%- JSON.stringify(Array.from(registeredSet)) %>;
+        function setModalData(scheduleId, eventName) {
+            document.getElementById('modalScheduleId').value = scheduleId;
             document.getElementById('modalEventName').innerText = eventName;
             
             // Check boxes if kid is registered
             document.querySelectorAll('.kid-checkbox').forEach(cb => {
                 const pid = cb.getAttribute('data-pid');
-                const key = eventId + '-' + pid;
+                const key = scheduleId + '-' + pid;
                 cb.checked = registeredList.includes(key);
             });
         }
