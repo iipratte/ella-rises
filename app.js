@@ -600,14 +600,17 @@ app.post("/participants/delete/:id", async (req, res) => {
 app.get("/events", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
+    // GET SEARCH PARAMS
+    const { searchEvent, searchLocation } = req.query;
+
     try {
-        // A. GET ALL EVENTS
-        const allEvents = await knex('event_schedule')
+        // A. GET ALL EVENTS (Base Query)
+        let query = knex('event_schedule')
             .join('events', 'event_schedule.eventid', '=', 'events.eventid')
             .leftJoin('registrations', 'event_schedule.scheduleid', 'registrations.scheduleid')
             .select(
                 'event_schedule.scheduleid',
-                'events.eventid',   // <--- NEW: Needed for the Edit Link!
+                'events.eventid',
                 'events.eventname',
                 'events.eventtype',
                 'events.eventdescription',
@@ -617,14 +620,24 @@ app.get("/events", async (req, res) => {
             .count('registrations.registrationid as reg_count')
             .groupBy(
                 'event_schedule.scheduleid', 
-                'events.eventid',   // <--- NEW: Required for grouping
+                'events.eventid',
                 'events.eventname', 
                 'events.eventtype', 
                 'events.eventdescription', 
                 'event_schedule.eventdatetimestart', 
                 'event_schedule.eventlocation'
-            )
-            .orderBy('event_schedule.eventdatetimestart', 'asc');
+            );
+
+        // APPLY FILTERS
+        if (searchEvent) {
+            query = query.where('events.eventname', 'ilike', `%${searchEvent}%`);
+        }
+        if (searchLocation) {
+            query = query.where('event_schedule.eventlocation', 'ilike', `%${searchLocation}%`);
+        }
+
+        // EXECUTE QUERY
+        const allEvents = await query.orderBy('event_schedule.eventdatetimestart', 'asc');
 
         const now = new Date();
         const upcoming = allEvents.filter(e => new Date(e.eventdatetimestart) >= now);
@@ -676,11 +689,20 @@ app.get("/events", async (req, res) => {
         });
         const myRegistrations = Object.values(groupedRegistrations);
 
-        res.render("events", { upcoming, past, myParticipants, myRegistrations, registeredSet });
+        res.render("events", { 
+            upcoming, 
+            past, 
+            myParticipants, 
+            myRegistrations, 
+            registeredSet,
+            // PASS SEARCH TERMS BACK
+            searchEvent: searchEvent || '',
+            searchLocation: searchLocation || ''
+        });
 
     } catch (err) {
         console.error("Error fetching events:", err);
-        res.render("events", { upcoming: [], past: [], myParticipants: [], myRegistrations: [], registeredSet: new Set() }); 
+        res.render("events", { upcoming: [], past: [], myParticipants: [], myRegistrations: [], registeredSet: new Set(), searchEvent: '', searchLocation: '' }); 
     }
 });
 
@@ -809,7 +831,16 @@ app.get("/events/edit/:id", async (req, res) => {
 
     try {
         // Fetch the event to pre-fill the form
-        const event = await knex('events').where({ eventid: req.params.id }).first();
+        // FIX: Join with event_schedule so we actually get the date!
+        const event = await knex('events')
+            .join('event_schedule', 'events.eventid', '=', 'event_schedule.eventid')
+            .where({ 'events.eventid': req.params.id })
+            .select(
+                'events.*',
+                'event_schedule.eventdatetimestart as eventdate', // Alias to match view expectation
+                'event_schedule.eventlocation'
+            )
+            .first();
         
         if (!event) return res.redirect('/events');
 
@@ -824,16 +855,24 @@ app.get("/events/edit/:id", async (req, res) => {
 app.post("/events/edit/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
 
-    const { eventName, eventType, eventDescription, eventDate, eventLocation } = req.body;
+    const { eventName, eventType, eventDescription, eventdate, eventLocation } = req.body;
 
     try {
+        // 1. Update the generic event details
         await knex('events')
             .where({ eventid: req.params.id })
             .update({
                 eventname: eventName,
                 eventtype: eventType,
-                eventdescription: eventDescription,
-                eventdate: eventDate,
+                eventdescription: eventDescription
+            });
+
+        // 2. Update the specific schedule details
+        await knex('event_schedule')
+            .where({ eventid: req.params.id })
+            .update({
+                eventdatetimestart: eventdate,
+                eventdatetimeend: eventdate, // Sync end time for now
                 eventlocation: eventLocation
             });
 
@@ -940,7 +979,7 @@ app.post("/survey/submit", async (req, res) => {
             surveysubmissiondate: new Date()
         });
         
-        res.redirect('/thankyou');
+    res.render('thankyou', { type: 'survey' });
 
     } catch (err) {
         console.error("Survey submit error:", err);
@@ -949,18 +988,175 @@ app.post("/survey/submit", async (req, res) => {
 });
 
 // 3. ADMIN: VIEW RESPONSES (Fixed Joins)
+// ==========================================
+// 1. UPDATE: EVENTS ROUTE (Search Added)
+// ==========================================
+app.get("/events", async (req, res) => {
+    if (!req.session.username) return res.redirect('/login');
+
+    // GET SEARCH PARAMS
+    const { searchEvent, searchLocation } = req.query;
+
+    try {
+        // A. GET ALL EVENTS (Base Query)
+        let query = knex('event_schedule')
+            .join('events', 'event_schedule.eventid', '=', 'events.eventid')
+            .leftJoin('registrations', 'event_schedule.scheduleid', 'registrations.scheduleid')
+            .select(
+                'event_schedule.scheduleid',
+                'events.eventid',
+                'events.eventname',
+                'events.eventtype',
+                'events.eventdescription',
+                'event_schedule.eventdatetimestart',
+                'event_schedule.eventlocation'
+            )
+            .count('registrations.registrationid as reg_count')
+            .groupBy(
+                'event_schedule.scheduleid', 
+                'events.eventid',
+                'events.eventname', 
+                'events.eventtype', 
+                'events.eventdescription', 
+                'event_schedule.eventdatetimestart', 
+                'event_schedule.eventlocation'
+            );
+
+        // APPLY FILTERS
+        if (searchEvent) {
+            query = query.where('events.eventname', 'ilike', `%${searchEvent}%`);
+        }
+        if (searchLocation) {
+            query = query.where('event_schedule.eventlocation', 'ilike', `%${searchLocation}%`);
+        }
+
+        // EXECUTE QUERY
+        const allEvents = await query.orderBy('event_schedule.eventdatetimestart', 'asc');
+
+        const now = new Date();
+        const upcoming = allEvents.filter(e => new Date(e.eventdatetimestart) >= now);
+        const past = allEvents.filter(e => new Date(e.eventdatetimestart) < now).reverse();
+
+        // B. GET LINKED PARTICIPANTS
+        const myParticipants = await knex('participants')
+            .where({ username: req.session.username })
+            .select('participantid', 'participantfirstname', 'participantlastname');
+
+        // C. GET MY REGISTRATIONS
+        const rawRegistrations = await knex('registrations')
+            .join('event_schedule', 'registrations.scheduleid', '=', 'event_schedule.scheduleid')
+            .join('events', 'event_schedule.eventid', '=', 'events.eventid')
+            .join('participants', 'registrations.participantid', '=', 'participants.participantid')
+            .whereIn('participants.username', [req.session.username])
+            .select(
+                'registrations.registrationid',
+                'event_schedule.scheduleid',
+                'events.eventname',
+                'event_schedule.eventdatetimestart',
+                'event_schedule.eventlocation',
+                'participants.participantfirstname',
+                'participants.participantid'
+            )
+            .orderBy('event_schedule.eventdatetimestart', 'asc');
+
+        // Logic: Create Lookup Set
+        const registeredSet = new Set(
+            rawRegistrations.map(r => `${r.scheduleid}-${r.participantid}`)
+        );
+
+        // Logic: Group My Events
+        const groupedRegistrations = {};
+        rawRegistrations.forEach(row => {
+            if (!groupedRegistrations[row.scheduleid]) {
+                groupedRegistrations[row.scheduleid] = {
+                    eventname: row.eventname,
+                    eventdatetimestart: row.eventdatetimestart,
+                    eventlocation: row.eventlocation,
+                    attendees: [] 
+                };
+            }
+            groupedRegistrations[row.scheduleid].attendees.push({
+                registrationid: row.registrationid,
+                name: row.participantfirstname,
+                id: row.participantid
+            });
+        });
+        const myRegistrations = Object.values(groupedRegistrations);
+
+        res.render("events", { 
+            upcoming, 
+            past, 
+            myParticipants, 
+            myRegistrations, 
+            registeredSet,
+            // PASS SEARCH TERMS BACK
+            searchEvent: searchEvent || '',
+            searchLocation: searchLocation || ''
+        });
+
+    } catch (err) {
+        console.error("Error fetching events:", err);
+        res.render("events", { upcoming: [], past: [], myParticipants: [], myRegistrations: [], registeredSet: new Set(), searchEvent: '', searchLocation: '' }); 
+    }
+});
+
+// ==========================================
+// 2. UPDATE: DONATIONS ROUTE (Search Added)
+// ==========================================
+app.get("/admin/donations", async (req, res) => {
+    if (!req.session.username) {
+        return res.redirect('/');
+    }
+
+    const { searchDonor } = req.query;
+
+    try {
+        let query = knex('donations')
+            .join('participants', 'donations.participantid', '=', 'participants.participantid')
+            .select(
+                'donations.donationid',
+                'donations.donationamount',
+                'donations.donationdate',
+                'donations.donationnotes',
+                'participants.participantfirstname',
+                'participants.participantlastname',
+                'participants.participantemail'
+            );
+
+        if (searchDonor) {
+            query = query.where(builder => {
+                builder.where('participants.participantfirstname', 'ilike', `%${searchDonor}%`)
+                       .orWhere('participants.participantlastname', 'ilike', `%${searchDonor}%`)
+                       .orWhere('participants.participantemail', 'ilike', `%${searchDonor}%`);
+            });
+        }
+
+        const donations = await query.orderByRaw('donations.donationdate DESC NULLS LAST');
+
+        res.render("admin/donationHistory", { 
+            donations,
+            searchDonor: searchDonor || ''
+        });
+    } catch (err) {
+        console.error("Error fetching donation history:", err);
+        res.render("admin/donationHistory", { donations: [], searchDonor: '' });
+    }
+});
+
+// ==========================================
+// 3. UPDATE: SURVEYS ROUTE (Search Added)
+// ==========================================
 app.get("/admin/survey-data", async (req, res) => {
-    // Open to all logged-in users
     if (!req.session.username) {
         return res.redirect('/login');
     }
 
+    const { searchSurvey } = req.query;
+
     try {
-        const responses = await knex('surveys')
-            // Link Surveys -> Schedule -> Events
+        let query = knex('surveys')
             .join('event_schedule', 'surveys.scheduleid', '=', 'event_schedule.scheduleid')
             .join('events', 'event_schedule.eventid', '=', 'events.eventid')
-            // Link Surveys -> Participants
             .join('participants', 'surveys.participantid', '=', 'participants.participantid')
             .select(
                 'surveys.surveyid',
@@ -972,14 +1168,24 @@ app.get("/admin/survey-data", async (req, res) => {
                 'surveys.surveyusefulnessscore as usefulness_score',
                 'surveys.surveynpsbucket',
                 'surveys.surveycomments as comments'
-            )
-            .orderBy('surveys.surveyid', 'desc');
+            );
 
-        res.render("admin/surveyResponses", { responses });
+        if (searchSurvey) {
+            query = query.where('events.eventname', 'ilike', `%${searchSurvey}%`)
+                         .orWhere('participants.participantfirstname', 'ilike', `%${searchSurvey}%`)
+                         .orWhere('participants.participantlastname', 'ilike', `%${searchSurvey}%`);
+        }
+
+        const responses = await query.orderBy('surveys.surveyid', 'desc');
+
+        res.render("admin/surveyResponses", { 
+            responses,
+            searchSurvey: searchSurvey || ''
+        });
 
     } catch (err) {
         console.error("Error fetching responses:", err);
-        res.render("admin/surveyResponses", { responses: [] });
+        res.render("admin/surveyResponses", { responses: [], searchSurvey: '' });
     }
 });
 
@@ -1065,10 +1271,6 @@ app.get("/milestones", async (req, res) => {
     try {
         let query = knex('participants').orderBy('participantlastname', 'asc');
 
-        // If not manager, only show their own participants
-        if (req.session.level !== 'M') {
-            query = query.where('username', req.session.username);
-        }
 
         if (firstName) query = query.where('participantfirstname', 'ilike', `%${firstName}%`);
         if (lastName) query = query.where('participantlastname', 'ilike', `%${lastName}%`);
@@ -1099,6 +1301,8 @@ app.get("/milestones", async (req, res) => {
         res.render("milestones", { participants: [], searchFirstName: '', searchLastName: '' });
     }
 });
+
+
 
 // 2. VIEW DETAILS (Specific Participant) - UPDATED: Allows Manager OR Owner
 app.get("/milestones/view/:id", async (req, res) => {
@@ -1291,7 +1495,7 @@ app.post('/donate', async (req, res) => {
             donationamount: parseFloat(amount)
         });
 
-        res.redirect('/thankyou');
+    res.render('thankyou', { type: 'donation' });
 
     } catch (err) {
         console.error('Donation processing error:', err);
@@ -1310,8 +1514,10 @@ app.get("/admin/donations", async (req, res) => {
         return res.redirect('/');
     }
 
+    const { searchDonor } = req.query;
+
     try {
-        const donations = await knex('donations')
+        let query = knex('donations')
             .join('participants', 'donations.participantid', '=', 'participants.participantid')
             .select(
                 'donations.donationid',
@@ -1321,13 +1527,25 @@ app.get("/admin/donations", async (req, res) => {
                 'participants.participantfirstname',
                 'participants.participantlastname',
                 'participants.participantemail'
-            )
-            .orderByRaw('donations.donationdate DESC NULLS LAST');
+            );
 
-        res.render("admin/donationHistory", { donations });
+        if (searchDonor) {
+            query = query.where(builder => {
+                builder.where('participants.participantfirstname', 'ilike', `%${searchDonor}%`)
+                       .orWhere('participants.participantlastname', 'ilike', `%${searchDonor}%`)
+                       .orWhere('participants.participantemail', 'ilike', `%${searchDonor}%`);
+            });
+        }
+
+        const donations = await query.orderByRaw('donations.donationdate DESC NULLS LAST');
+
+        res.render("admin/donationHistory", { 
+            donations,
+            searchDonor: searchDonor || ''
+        });
     } catch (err) {
         console.error("Error fetching donation history:", err);
-        res.render("admin/donationHistory", { donations: [] });
+        res.render("admin/donationHistory", { donations: [], searchDonor: '' });
     }
 });
 

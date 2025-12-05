@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><!-- TItle-->
+<head>
     <title>Milestones - Ella Rises</title>
     <%- include('partials/head') %>
 </head>
 <body class="bg-light">
-<!-- Header -->
+
     <%- include('partials/header') %>
 
     <div class="container mt-5 mb-5">
         <h1 class="fw-bold text-primary mb-4" style="font-family: 'DM Serif Display', serif;">Milestone Tracking</h1>
-        <!-- Milestones routes-->
+        
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body bg-white p-4">
                 <form action="/milestones" method="GET" class="row g-3 align-items-end">
@@ -27,7 +27,7 @@
                     <div class="col-md-2 d-grid">
                         <button type="submit" class="btn btn-primary">Apply</button>
                     </div>
-                    <!-- Search -->
+                    
                     <% if (searchFirstName || searchLastName) { %>
                         <div class="col-12 text-end mt-2">
                             <a href="/milestones" class="text-decoration-none small text-danger">
@@ -38,14 +38,14 @@
                 </form>
             </div>
         </div>
-<!-- History -->
+
         <div class="alert alert-info" role="alert">
             <i class="bi bi-info-circle-fill me-2"></i> 
             Click on a participant's name to view their detailed milestone history.
         </div>
 
         <div class="accordion shadow-sm" id="milestoneAccordion">
-            <!-- Search results -->
+            
             <% if (participants.length === 0) { %>
                 <div class="card p-5 text-center border-0">
                     <h5 class="text-muted mb-3">No participants found.</h5>
@@ -54,7 +54,7 @@
                     <% } %>
                 </div>
             <% } else { %>
-                <!-- Search loop -->
+                
                 <% participants.forEach((p, index) => { %>
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="heading<%= index %>">
@@ -70,13 +70,15 @@
                         <div id="collapse<%= index %>" class="accordion-collapse collapse" aria-labelledby="heading<%= index %>" data-bs-parent="#milestoneAccordion">
                             <div class="accordion-body bg-white">
                                 
-                                <div class="d-flex justify-content-end mb-3">
-                                    <% if (user && user.role === 'Manager') { %>  <a href="/milestones/add/<%= p.participantid %>" class="btn btn-sm btn-outline-primary">
+                                <!-- ONLY MANAGER CAN ADD -->
+                                <% if (user && user.role === 'Manager') { %>
+                                    <div class="d-flex justify-content-end mb-3">
+                                        <a href="/milestones/add/<%= p.participantid %>" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-plus-lg"></i> Add New
                                         </a>
-                                    <% } %>
-                                </div>
-<!-- Pull data-->
+                                    </div>
+                                <% } %>
+
                                 <% if (p.milestones.length > 0) { %>
                                     <div class="table-responsive">
                                         <table class="table table-sm table-hover align-middle">
@@ -85,7 +87,9 @@
                                                     <th>Title</th>
                                                     <th>Date</th>
                                                     <th>Notes</th>
-                                                    <% if (user && user.role === 'Manager') { %> <th class="text-end">Actions</th>
+                                                    <!-- ONLY MANAGER SEES ACTIONS COLUMN -->
+                                                    <% if (user && user.role === 'Manager') { %>
+                                                        <th class="text-end">Actions</th>
                                                     <% } %>
                                                 </tr>
                                             </thead>
@@ -95,12 +99,13 @@
                                                         <td class="fw-semibold"><%= m.milestonetitle %></td>
                                                         <td><%= new Date(m.milestonedate).toLocaleDateString() %></td>
                                                         <td class="text-muted small"><%= m.milestonenotes || '-' %></td>
-                                                        <!-- Edit ropute-->
-                                                        <% if (user && user.role === 'Manager') { %> <td class="text-end" style="white-space: nowrap;">
+                                                        
+                                                        <!-- ONLY MANAGER SEES EDIT/DELETE BUTTONS -->
+                                                        <% if (user && user.role === 'Manager') { %>
+                                                            <td class="text-end" style="white-space: nowrap;">
                                                                 <a href="/milestones/edit/<%= m.milestoneid %>" class="btn btn-sm btn-outline-secondary me-2" title="Edit">
                                                                     Edit
                                                                 </a>
-                                                                <!-- Delete route-->
                                                                 <form action="/milestones/delete/<%= m.milestoneid %>" method="POST" class="d-inline" onsubmit="return confirm('Delete this milestone?');">
                                                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                                                                         Delete
@@ -108,12 +113,12 @@
                                                                 </form>
                                                             </td>
                                                         <% } %>
-                                                    </tr>                                                <% }) %>
+                                                    </tr>
+                                                <% }) %>
                                             </tbody>
                                         </table>
                                     </div>
                                 <% } else { %>
-                                    <!-- If no milestones-->
                                     <p class="text-muted fst-italic mb-0">No milestones recorded for this participant yet.</p>
                                 <% } %>
 
@@ -125,7 +130,7 @@
             <% } %>
         </div>
     </div>
-<!-- Footer -->
+
     <%- include('partials/footer') %>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
