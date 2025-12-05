@@ -107,12 +107,29 @@
                                         <td><%= p.participantfieldofinterest || '-' %></td>
 
                                         <td>
+                                            <% 
+                                                // Calculate permissions for this specific row
+                                                const isManagerPill = user && user.role === 'Manager';
+                                                const isOwnerPill = user && p.username === user.username;
+                                                const canEditMilestones = isManagerPill || isOwnerPill;
+                                            %>
+        
+                                            <% if (canEditMilestones) { %>
+                                                <a href="/milestones/view/<%= p.participantid %>" class="text-decoration-none" title="Manage Milestones">
+                                            <% } %>
+        
                                             <% if (p.milestone_count > 0) { %>
                                                 <span class="badge bg-primary bg-opacity-75 rounded-pill">
                                                     <%= p.milestone_count %> Achieved
                                                 </span>
                                             <% } else { %>
-                                                <span class="text-muted small">-</span>
+                                                <span class="badge bg-secondary bg-opacity-25 text-dark rounded-pill">
+                                                    0 Achieved
+                                                </span>
+                                            <% } %>
+        
+                                            <% if (canEditMilestones) { %>
+                                                </a>
                                             <% } %>
                                         </td>
 
