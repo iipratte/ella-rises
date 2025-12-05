@@ -1,0 +1,1 @@
+sudo certbot -n -d ella-rises.us-east-2.elasticbeanstalk.com --nginx --agree-tos --email isaac.pratte@gmail.com
