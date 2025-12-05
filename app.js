@@ -274,6 +274,36 @@ app.get("/admin/dashboard", async (req, res) => {
     }
 });
 
+// --- ACCOUNT MANAGEMENT ROUTES ---
+
+// 1. Show Account Page
+app.get("/account", async (req, res) => {
+    if (!req.session.username) return res.redirect('/login');
+
+    try {
+        // 1. Fetch User Details
+        const user = await knex('users').where({ username: req.session.username }).first();
+        
+        // 2. Fetch Linked Participant Details (for School/Interest fields)
+        const participant = await knex('participants').where({ username: req.session.username }).first();
+
+        // Data Mapping for Header/View
+        user.firstName = user.firstname; 
+        user.role = user.level === 'M' ? 'Manager' : 'User';
+
+        // Pass both user and participant to the view
+        res.render("account", { 
+            user, 
+            participant: participant || {}, // Pass empty object if no participant record exists
+            success: req.query.success 
+        });
+
+    } catch (err) {
+        console.error("Error fetching account:", err);
+        res.redirect('/');
+    }
+});
+
 // 2. Process Account Update
 app.post("/account", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
@@ -281,45 +311,21 @@ app.post("/account", async (req, res) => {
     const { 
         username, firstname, lastname, userdob, email, phone, 
         city, state, zip, password, 
-        schoolOrEmployer, fieldOfInterest // New fields from form
+        schoolOrEmployer, fieldOfInterest 
     } = req.body;
 
     try {
-        // Get current user to check ID/ParentFlag
+        // Get current user
         const currentUser = await knex('users').where({ username: req.session.username }).first();
         
-        if (!currentUser) {
-            return res.redirect('/login');
-        }
-
-        // --- Uniqueness Checks (Username/Email) ---
-        if (username.toLowerCase() !== currentUser.username.toLowerCase()) {
-            const existingUsername = await knex('users').where({ username: username.toLowerCase() }).first();
-            if (existingUsername) {
-                return res.render("account", { 
-                    user: req.body, 
-                    participant: { participantschooloremployer: schoolOrEmployer, participantfieldofinterest: fieldOfInterest },
-                    error: "Username is already taken." 
-                });
-            }
-        }
-        if (email.toLowerCase() !== currentUser.email.toLowerCase()) {
-            const existingEmail = await knex('users').where({ email: email.toLowerCase() }).whereNot({ username: currentUser.username }).first();
-            if (existingEmail) {
-                return res.render("account", { 
-                    user: req.body, 
-                    participant: { participantschooloremployer: schoolOrEmployer, participantfieldofinterest: fieldOfInterest },
-                    error: "Email is already taken." 
-                });
-            }
-        }
+        if (!currentUser) return res.redirect('/login');
 
         // --- 1. Update USERS Table ---
         const userUpdateData = {
             username: username.toLowerCase(),
             firstname,
             lastname,
-            dob: userdob, // Map form 'userdob' to DB 'dob'
+            dob: userdob,
             email: email.toLowerCase(),
             phone,
             city,
@@ -335,18 +341,27 @@ app.post("/account", async (req, res) => {
             .where({ username: currentUser.username }) 
             .update(userUpdateData);
 
-        // --- 2. Update PARTICIPANTS Table (If not a parent) ---
-        // We check the flag on the currentUser we fetched at the start
-        if (currentUser.parentflag === false || currentUser.parentflag === 0 || currentUser.parentflag === 'f') {
+        // --- 2. Update PARTICIPANTS Table (If they have one) ---
+        // Only update participant details if they are NOT a parent (Students usually update their own info)
+        // OR if you want parents to update their own "Participant" record if they have one.
+        // Safe bet: Update it if it exists.
+        const hasParticipantRecord = await knex('participants').where({ username: currentUser.username }).first();
+        
+        if (hasParticipantRecord) {
             await knex('participants')
-                .where({ username: userUpdateData.username }) // Use new username in case it changed (assuming cascade worked or transaction)
+                .where({ username: currentUser.username }) // This assumes username didn't change yet, or cascade handles it
                 .update({
                     participantschooloremployer: schoolOrEmployer,
-                    participantfieldofinterest: fieldOfInterest
+                    participantfieldofinterest: fieldOfInterest,
+                    // Also update basic contact info in participant table to keep in sync
+                    participantfirstname: firstname,
+                    participantlastname: lastname,
+                    participantemail: email.toLowerCase(),
+                    participantphone: phone
                 });
         }
 
-        // Update Session
+        // Update Session with new info
         req.session.username = userUpdateData.username;
         req.session.firstName = userUpdateData.firstname;
 
@@ -791,71 +806,62 @@ app.get("/surveys", (req, res) => {
     res.redirect("/survey"); 
 });
 
-// 1. SHOW SURVEY FORM
+// 1. SHOW SURVEY FORM (Flexible Mode)
 app.get("/survey", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
     try {
-        // Get events the user has actually registered for
-        const myEvents = await knex('registrations')
-            .join('event_schedule', 'registrations.scheduleid', '=', 'event_schedule.scheduleid')
-            .join('events', 'event_schedule.eventid', '=', 'events.eventid')
-            .join('participants', 'registrations.participantid', '=', 'participants.participantid')
-            .where('participants.username', req.session.username)
-            .select('events.eventname', 'event_schedule.scheduleid') // Select scheduleid directly
-            .distinct('events.eventname'); 
+        // A. Get "Who" (The logged-in user's linked participants)
+        const myParticipants = await knex('participants')
+            .where({ username: req.session.username })
+            .select('participantid', 'participantfirstname', 'participantlastname');
 
-        res.render("surveys", { events: myEvents });
+        // B. Get "What" (ALL past events, not just registered ones)
+        const pastEvents = await knex('event_schedule')
+            .join('events', 'event_schedule.eventid', '=', 'events.eventid')
+            .where('event_schedule.eventdatetimestart', '<', new Date()) // Only past events
+            .select(
+                'event_schedule.scheduleid', 
+                'events.eventname', 
+                'event_schedule.eventdatetimestart'
+            )
+            .orderBy('event_schedule.eventdatetimestart', 'desc');
+
+        res.render("surveys", { myParticipants, pastEvents });
+
     } catch (err) {
-        console.error("Error fetching survey events:", err);
-        res.render("surveys", { events: [] });
+        console.error("Error fetching survey data:", err);
+        res.render("surveys", { myParticipants: [], pastEvents: [] });
     }
 });
 
-// 2. SUBMIT SURVEY (Updated for 1-5 NPS Logic)
+// 2. SUBMIT SURVEY (Fixed for your Database)
 app.post("/survey/submit", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
-    // Get all fields from the new form
-    const { registrationId, satisfaction, usefulness, instructor, recommendation, comments } = req.body;
+    // The form sends these IDs directly
+    const { scheduleId, participantId, satisfaction, usefulness, recommendation, comments } = req.body;
 
     try {
-        // 1. Verify this registration actually belongs to the logged-in user
-        const validRegistration = await knex('registrations')
-            .join('participants', 'registrations.participantid', '=', 'participants.participantid')
-            .where('participants.username', req.session.username)
-            .where('registrations.registrationid', registrationId)
-            .first();
+        // Calculate NPS Bucket
+        let npsBucket = 'Passive';
+        const recScore = parseInt(recommendation);
+        if (recScore >= 5) npsBucket = 'Promoter';
+        if (recScore <= 3) npsBucket = 'Detractor';
 
-        if (validRegistration) {
-            // 2. Calculate NPS Bucket (Custom 1-5 Scale)
-            // 5 = Promoter | 4 = Passive | 1-3 = Detractor
-            let npsBucket = 'Passive';
-            const recScore = parseInt(recommendation);
-            
-            if (recScore >= 5) {
-                npsBucket = 'Promoter';
-            } else if (recScore <= 3) {
-                npsBucket = 'Detractor';
-            }
-
-            // 3. Insert full data
-            await knex('surveys').insert({
-                registrationid: registrationId,
-                surveysatisfactionscore: satisfaction,
-                surveyusefulnessscore: usefulness,
-                surveyinstructorscore: instructor,
-                surveyrecommendationscore: recommendation,
-                surveynpsbucket: npsBucket,
-                surveycomments: comments,
-                surveysubmissiondate: new Date()
-            });
-            
-            res.redirect('/thankyou');
-        } else {
-            console.error("Invalid Registration ID or unauthorized user.");
-            res.redirect('/survey');
-        }
+        // Insert DIRECTLY into surveys table
+        await knex('surveys').insert({
+            scheduleid: scheduleId,       // Matches your DB
+            participantid: participantId, // Matches your DB
+            surveysatisfactionscore: satisfaction,
+            surveyusefulnessscore: usefulness,
+            surveyrecommendationscore: recommendation,
+            surveynpsbucket: npsBucket,
+            surveycomments: comments,
+            surveysubmissiondate: new Date()
+        });
+        
+        res.redirect('/thankyou');
 
     } catch (err) {
         console.error("Survey submit error:", err);
@@ -863,29 +869,107 @@ app.post("/survey/submit", async (req, res) => {
     }
 });
 
-// 3. ADMIN: VIEW RESPONSES (Fixed JOINs)
+// 3. ADMIN: VIEW RESPONSES (Fixed for your Database)
 app.get("/admin/survey-data", async (req, res) => {
-    if (!req.session.username) {
-        return res.redirect('/');
-    }
+    if (!req.session.username) return res.redirect('/login');
 
     try {
-        // Correct JOIN path: Surveys -> Event_Schedule -> Events
         const responses = await knex('surveys')
+            // DIRECT JOIN: Surveys -> Schedule -> Events
             .join('event_schedule', 'surveys.scheduleid', '=', 'event_schedule.scheduleid')
             .join('events', 'event_schedule.eventid', '=', 'events.eventid')
+            // DIRECT JOIN: Surveys -> Participants
+            .join('participants', 'surveys.participantid', '=', 'participants.participantid')
             .select(
+                'surveys.surveyid',
                 'events.eventname as event_name',
+                'event_schedule.eventdatetimestart',
+                'participants.participantfirstname',
+                'participants.participantlastname',
                 'surveys.surveysatisfactionscore as satisfaction_score',
                 'surveys.surveyusefulnessscore as usefulness_score',
+                'surveys.surveynpsbucket',
                 'surveys.surveycomments as comments'
             )
             .orderBy('surveys.surveyid', 'desc');
 
         res.render("admin/surveyResponses", { responses });
+
     } catch (err) {
         console.error("Error fetching responses:", err);
         res.render("admin/surveyResponses", { responses: [] });
+    }
+});
+
+// 4. DELETE SURVEY (Manager Only)
+app.post("/survey/delete/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/admin/survey-data');
+
+    try {
+        await knex('surveys').where({ surveyid: req.params.id }).del();
+        res.redirect('/admin/survey-data');
+    } catch (err) {
+        console.error("Error deleting survey:", err);
+        res.redirect('/admin/survey-data');
+    }
+});
+
+// 5. GET EDIT SURVEY FORM (Manager Only)
+app.get("/survey/edit/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/admin/survey-data');
+
+    try {
+        // FIXED JOIN: Link Surveys directly to Schedule and Participants
+        const survey = await knex('surveys')
+            .join('event_schedule', 'surveys.scheduleid', '=', 'event_schedule.scheduleid')
+            .join('events', 'event_schedule.eventid', '=', 'events.eventid')
+            .join('participants', 'surveys.participantid', '=', 'participants.participantid')
+            .where({ surveyid: req.params.id })
+            .select(
+                'surveys.*',
+                'events.eventname',
+                'participants.participantfirstname',
+                'participants.participantlastname'
+            )
+            .first();
+
+        if (!survey) return res.redirect('/admin/survey-data');
+
+        res.render("editSurvey", { survey });
+
+    } catch (err) {
+        console.error("Error fetching survey to edit:", err);
+        res.redirect('/admin/survey-data');
+    }
+});
+
+// 6. POST EDIT SURVEY (Manager Only)
+app.post("/survey/edit/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    const { satisfaction, usefulness, recommendation, comments } = req.body;
+
+    try {
+        // Recalculate NPS since they might change the score
+        let npsBucket = 'Passive';
+        const recScore = parseInt(recommendation);
+        if (recScore >= 5) npsBucket = 'Promoter'; // Based on 1-5 scale
+        if (recScore <= 3) npsBucket = 'Detractor';
+
+        await knex('surveys')
+            .where({ surveyid: req.params.id })
+            .update({
+                surveysatisfactionscore: satisfaction,
+                surveyusefulnessscore: usefulness,
+                surveyrecommendationscore: recommendation,
+                surveynpsbucket: npsBucket,
+                surveycomments: comments
+            });
+
+        res.redirect('/admin/survey-data');
+    } catch (err) {
+        console.error("Error updating survey:", err);
+        res.send("Error updating survey.");
     }
 });
 
