@@ -156,8 +156,15 @@ h1, h2, h3, h4, h5, .navbar-brand {
 .text-primary { color: var(--er-charcoal) !important; }
 
 /* --- 5. TABLES --- */
+
+/* NEW RULE: Vertically center all table content */
+.table td, .table th {
+    vertical-align: middle;
+}
+
+/* (Existing Header Styles) */
 .table thead th {
-    background-color: var(--er-sage) !important; /* Sage Green Headers */
+    background-color: var(--er-sage) !important; 
     color: white;
     font-family: var(--font-body);
     font-weight: 600;
@@ -169,7 +176,7 @@ h1, h2, h3, h4, h5, .navbar-brand {
 }
 
 .table-striped tbody tr:nth-of-type(odd) {
-    background-color: var(--er-bg); /* Cream stripes */
+    background-color: var(--er-bg); 
 }
 
 /* --- 6. FORMS --- */

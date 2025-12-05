@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Add Participant - Ella Rises</title>
+    <title>Edit Participant - Ella Rises</title>
     <%- include('partials/head') %>
 </head>
 <body class="bg-light">
@@ -11,50 +11,51 @@
     <div class="container mt-5 mb-5" style="max-width: 800px;">
         <div class="card shadow-lg border-0">
             <div class="card-header py-3" style="background-color: var(--er-primary);">
-                <h4 class="mb-0 fw-bold text-white" style="font-family: 'Playfair Display', serif;">Add New Participant</h4>
+                <h4 class="mb-0 fw-bold text-white" style="font-family: 'Playfair Display', serif;">Edit Participant</h4>
             </div>
 
             <div class="card-body p-4">
                 
-                <% if (typeof error !== 'undefined' && error) { %>
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-circle-fill me-2"></i> <%= error %>
-                    </div>
-                <% } %>
-
-                <form action="/participants/add" method="POST">
+                <form action="/participants/edit/<%= participant.participantid %>" method="POST">
 
                     <h6 class="text-uppercase text-muted fw-bold mb-3 small">Personal Information</h6>
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">First Name</label>
-                            <input type="text" class="form-control" name="firstName" required value="<%= typeof firstName !== 'undefined' ? firstName : '' %>">
+                            <input type="text" class="form-control" name="firstName" required value="<%= participant.participantfirstname %>">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Last Name</label>
-                            <input type="text" class="form-control" name="lastName" required value="<%= typeof lastName !== 'undefined' ? lastName : '' %>">
+                            <input type="text" class="form-control" name="lastName" required value="<%= participant.participantlastname %>">
                         </div>
                     </div>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Email</label>
-                            <input type="email" class="form-control" name="email" required value="<%= typeof email !== 'undefined' ? email : '' %>">
+                            <input type="email" class="form-control" name="email" required value="<%= participant.participantemail %>">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Phone</label>
-                            <input type="tel" class="form-control" name="phone" value="<%= typeof phone !== 'undefined' ? phone : '' %>">
+                            <input type="tel" class="form-control" name="phone" value="<%= participant.participantphone %>">
                         </div>
                     </div>
 
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Date of Birth</label>
-                            <input type="date" class="form-control" name="dob" value="<%= typeof dob !== 'undefined' ? dob : '' %>">
+                            <% 
+                                // Format date for input field (YYYY-MM-DD)
+                                let dobVal = '';
+                                if (participant.participantdob) {
+                                    dobVal = new Date(participant.participantdob).toISOString().split('T')[0];
+                                }
+                            %>
+                            <input type="date" class="form-control" name="dob" value="<%= dobVal %>">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Zip Code</label>
-                            <input type="text" class="form-control" name="zip" value="<%= typeof zip !== 'undefined' ? zip : '' %>">
+                            <input type="text" class="form-control" name="zip" value="<%= participant.participantzip %>">
                         </div>
                     </div>
 
@@ -63,27 +64,24 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">School / Employer</label>
-                            <input type="text" class="form-control" name="employer" value="<%= typeof employer !== 'undefined' ? employer : '' %>">
+                            <input type="text" class="form-control" name="employer" value="<%= participant.participantschooloremployer %>">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Field of Interest</label>
-                            <input type="text" class="form-control" name="interest" value="<%= typeof interest !== 'undefined' ? interest : '' %>">
+                            <input type="text" class="form-control" name="interest" value="<%= participant.participantfieldofinterest %>">
                         </div>
                     </div>
 
-                    <% if (!user.isParent) { %>
+                    <% if (user.role === 'Manager') { %>
                         <div class="alert alert-light border mb-4">
                             <label class="form-label fw-bold text-primary">Link to User Account (Optional)</label>
-                            <input type="text" class="form-control" name="username" placeholder="Enter username if they have an account..." value="<%= typeof username !== 'undefined' ? username : '' %>">
-                            <div class="form-text text-muted small">
-                                If provided, this must match an existing username. Leave blank if they haven't signed up yet.
-                            </div>
+                            <input type="text" class="form-control" name="username" placeholder="Username..." value="<%= participant.username || '' %>">
                         </div>
                     <% } %>
 
                     <div class="d-flex justify-content-between">
                         <a href="/participants" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary px-4">Add Participant</button>
+                        <button type="submit" class="btn btn-primary px-4">Save Changes</button>
                     </div>
 
                 </form>

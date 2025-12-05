@@ -93,9 +93,9 @@
       <div class="col-md-3">
         <div class="card kpi-card shadow-sm text-center py-4">
           <div class="card-body">
-            <h5 class="text-muted mb-2">Active Events</h5>
-            <h2 class="fw-bold text-dark">8</h2>
-            <small class="text-primary">Upcoming this week</small>
+            <h5 class="text-muted mb-2">Upcoming Events</h5>
+            <h2 class="fw-bold text-dark"><%= stats.events %></h2>
+            <small class="text-primary"><i class="bi bi-calendar-event"></i> Scheduled</small>
           </div>
         </div>
       </div>
@@ -105,8 +105,8 @@
         <div class="card kpi-card shadow-sm text-center py-4">
           <div class="card-body">
             <h5 class="text-muted mb-2">Survey Responses</h5>
-            <h2 class="fw-bold text-dark">856</h2>
-            <small class="text-success">98% Satisfaction</small>
+            <h2 class="fw-bold text-dark"><%= Number(stats.surveys).toLocaleString() %></h2>
+            <small class="text-success"><i class="bi bi-chat-square-text"></i> Feedback Received</small>
           </div>
         </div>
       </div>
