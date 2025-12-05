@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Edit Event - Ella Rises</title>
+    <%- include('partials/head') %> 
+</head>
+<body class="bg-light">
+
+    <%- include('partials/header') %>
+
+    <div class="container mt-5" style="max-width: 700px;">
+        <div class="card shadow-lg border-0">
+            <div class="card-header py-3" style="background-color: var(--er-primary);">
+                <h4 class="mb-0 fw-bold text-white" style="font-family: 'Playfair Display', serif;">Edit Event</h4>
+            </div>
+            
+            <div class="card-body p-4">
+                <form action="/events/edit/<%= event.eventid %>" method="POST">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Event Name</label>
+                        <input type="text" class="form-control" name="eventName" required value="<%= event.eventname %>">
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Event Type</label>
+                             <select class="form-select" name="eventType">
+                                <option value="Workshop" <%= event.eventtype === 'Workshop' ? 'selected' : '' %>>Workshop</option>
+                                <option value="Leadership" <%= event.eventtype === 'Leadership' ? 'selected' : '' %>>Leadership</option>
+                                <option value="Mentoring" <%= event.eventtype === 'Mentoring' ? 'selected' : '' %>>Mentoring</option>
+                                <option value="Community" <%= event.eventtype === 'Community' ? 'selected' : '' %>>Community Service</option>
+                                <option value="Other" <%= event.eventtype === 'Other' ? 'selected' : '' %>>Other</option>
+                             </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Date & Time</label>
+                             <%
+                                let dateStr = '';
+                                // Check if eventdate exists
+                                if (event.eventdate) {
+                                    const d = new Date(event.eventdate);
+                                    // Check if 'd' is actually a valid date object
+                                    if (!isNaN(d.getTime())) {
+                                        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                                        dateStr = d.toISOString().slice(0, 16);
+                                    }
+                                }
+                              %>
+                            <input 
+                            type="datetime-local" 
+                            class="form-control" 
+                            name="eventdate" 
+                            value="<%= dateStr %>" 
+                            required
+                            >                        
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                         <label class="form-label fw-bold">Description</label>
+                        <textarea class="form-control" name="eventDescription" rows="3"><%= event.eventdescription %></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Location / Venue</label>
+                        <input type="text" class="form-control" name="eventLocation" required value="<%= event.eventlocation %>">
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="/events" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-5">Update Event</button>
+                     </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <%- include('partials/footer') %>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

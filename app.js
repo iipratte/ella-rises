@@ -596,7 +596,7 @@ app.post("/participants/delete/:id", async (req, res) => {
 
 // --- EVENT ROUTES ---
 
-// 1. VIEW EVENTS
+// 1. VIEW EVENTS (Fixed: Now selects eventid for the Edit button)
 app.get("/events", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
@@ -607,6 +607,7 @@ app.get("/events", async (req, res) => {
             .leftJoin('registrations', 'event_schedule.scheduleid', 'registrations.scheduleid')
             .select(
                 'event_schedule.scheduleid',
+                'events.eventid',   // <--- NEW: Needed for the Edit Link!
                 'events.eventname',
                 'events.eventtype',
                 'events.eventdescription',
@@ -615,8 +616,13 @@ app.get("/events", async (req, res) => {
             )
             .count('registrations.registrationid as reg_count')
             .groupBy(
-                'event_schedule.scheduleid', 'events.eventname', 'events.eventtype', 
-                'events.eventdescription', 'event_schedule.eventdatetimestart', 'event_schedule.eventlocation'
+                'event_schedule.scheduleid', 
+                'events.eventid',   // <--- NEW: Required for grouping
+                'events.eventname', 
+                'events.eventtype', 
+                'events.eventdescription', 
+                'event_schedule.eventdatetimestart', 
+                'event_schedule.eventlocation'
             )
             .orderBy('event_schedule.eventdatetimestart', 'asc');
 
@@ -629,7 +635,7 @@ app.get("/events", async (req, res) => {
             .where({ username: req.session.username })
             .select('participantid', 'participantfirstname', 'participantlastname');
 
-        // C. GET MY REGISTRATIONS (With IDs for the Set)
+        // C. GET MY REGISTRATIONS
         const rawRegistrations = await knex('registrations')
             .join('event_schedule', 'registrations.scheduleid', '=', 'event_schedule.scheduleid')
             .join('events', 'event_schedule.eventid', '=', 'events.eventid')
@@ -642,17 +648,16 @@ app.get("/events", async (req, res) => {
                 'event_schedule.eventdatetimestart',
                 'event_schedule.eventlocation',
                 'participants.participantfirstname',
-                'participants.participantid' // Needed for the Set!
+                'participants.participantid'
             )
             .orderBy('event_schedule.eventdatetimestart', 'asc');
 
-        // --- NEW LOGIC: Create the Lookup Set ---
-        // Creates a list like ["1-5", "2-8"] so EJS knows who is registered for what
+        // Logic: Create Lookup Set
         const registeredSet = new Set(
             rawRegistrations.map(r => `${r.scheduleid}-${r.participantid}`)
         );
 
-        // Group for "My Events" display
+        // Logic: Group My Events
         const groupedRegistrations = {};
         rawRegistrations.forEach(row => {
             if (!groupedRegistrations[row.scheduleid]) {
@@ -671,12 +676,10 @@ app.get("/events", async (req, res) => {
         });
         const myRegistrations = Object.values(groupedRegistrations);
 
-        // Pass 'registeredSet' to the view
         res.render("events", { upcoming, past, myParticipants, myRegistrations, registeredSet });
 
     } catch (err) {
         console.error("Error fetching events:", err);
-        // Pass empty set on error so page doesn't crash
         res.render("events", { upcoming: [], past: [], myParticipants: [], myRegistrations: [], registeredSet: new Set() }); 
     }
 });
@@ -800,13 +803,68 @@ app.post("/events/add", async (req, res) => {
     }
 });
 
+// 6. GET EDIT EVENT FORM (Manager Only)
+app.get("/events/edit/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/events');
+
+    try {
+        // Fetch the event to pre-fill the form
+        const event = await knex('events').where({ eventid: req.params.id }).first();
+        
+        if (!event) return res.redirect('/events');
+
+        res.render("editEvent", { event });
+    } catch (err) {
+        console.error("Error fetching event to edit:", err);
+        res.redirect('/events');
+    }
+});
+
+// 7. POST EDIT EVENT (Manager Only)
+app.post("/events/edit/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    const { eventName, eventType, eventDescription, eventDate, eventLocation } = req.body;
+
+    try {
+        await knex('events')
+            .where({ eventid: req.params.id })
+            .update({
+                eventname: eventName,
+                eventtype: eventType,
+                eventdescription: eventDescription,
+                eventdate: eventDate,
+                eventlocation: eventLocation
+            });
+
+        res.redirect('/events');
+    } catch (err) {
+        console.error("Error updating event:", err);
+        res.send("Error updating event.");
+    }
+});
+
+// 8. DELETE EVENT (Manager Only)
+app.post("/events/delete/:id", async (req, res) => {
+    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+
+    try {
+        // Deleting the event will cascade delete the registrations automatically
+        await knex('events').where({ eventid: req.params.id }).del();
+        res.redirect('/events');
+    } catch (err) {
+        console.error("Error deleting event:", err);
+        res.redirect('/events');
+    }
+});
+
 // --- SURVEYS ---
 
 app.get("/surveys", (req, res) => {
     res.redirect("/survey"); 
 });
 
-// 1. SHOW SURVEY FORM (Flexible Mode)
+// 1. SHOW SURVEY FORM (Matches your new ejs)
 app.get("/survey", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
@@ -816,10 +874,11 @@ app.get("/survey", async (req, res) => {
             .where({ username: req.session.username })
             .select('participantid', 'participantfirstname', 'participantlastname');
 
-        // B. Get "What" (ALL past events, not just registered ones)
+        // B. Get "What" (ALL past events)
+        // Linking event_schedule -> events to get the name
         const pastEvents = await knex('event_schedule')
             .join('events', 'event_schedule.eventid', '=', 'events.eventid')
-            .where('event_schedule.eventdatetimestart', '<', new Date()) // Only past events
+            .where('event_schedule.eventdatetimestart', '<', new Date()) 
             .select(
                 'event_schedule.scheduleid', 
                 'events.eventname', 
@@ -835,24 +894,44 @@ app.get("/survey", async (req, res) => {
     }
 });
 
-// 2. SUBMIT SURVEY (Fixed for your Database)
+// 2. SUBMIT SURVEY (Fixed to use scheduleid/participantid)
 app.post("/survey/submit", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
-    // The form sends these IDs directly
-    const { scheduleId, participantId, satisfaction, usefulness, recommendation, comments } = req.body;
+    // The form sends these IDs directly now
+    const { participantId, scheduleId, satisfaction, usefulness, recommendation, comments } = req.body;
 
     try {
-        // Calculate NPS Bucket
+        // 1. Check if a registration ALREADY exists for this kid + event
+        // We search the 'registrations' table (where registrationid DOES exist)
+        let registration = await knex('registrations')
+            .where({ scheduleid: scheduleId, participantid: participantId })
+            .first();
+
+        // 2. If they aren't registered yet, AUTO-REGISTER them (Walk-in logic)
+        if (!registration) {
+            const [newReg] = await knex('registrations').insert({
+                scheduleid: scheduleId,
+                participantid: participantId,
+                registrationstatus: 'Attended', // Mark them as attended
+                registrationattendedflag: true
+            }).returning('registrationid');
+            
+            // Use the new ID
+            const newId = newReg.registrationid || newReg;
+            registration = { registrationid: newId };
+        }
+
+        // 3. Calculate NPS Bucket (1-5 Scale)
         let npsBucket = 'Passive';
         const recScore = parseInt(recommendation);
         if (recScore >= 5) npsBucket = 'Promoter';
         if (recScore <= 3) npsBucket = 'Detractor';
 
-        // Insert DIRECTLY into surveys table
+        // 4. Insert Survey (Using SCHEDULEID and PARTICIPANTID, NOT registrationid)
         await knex('surveys').insert({
-            scheduleid: scheduleId,       // Matches your DB
-            participantid: participantId, // Matches your DB
+            scheduleid: scheduleId,       // ✅ Correct Column
+            participantid: participantId, // ✅ Correct Column
             surveysatisfactionscore: satisfaction,
             surveyusefulnessscore: usefulness,
             surveyrecommendationscore: recommendation,
@@ -869,16 +948,19 @@ app.post("/survey/submit", async (req, res) => {
     }
 });
 
-// 3. ADMIN: VIEW RESPONSES (Fixed for your Database)
+// 3. ADMIN: VIEW RESPONSES (Fixed Joins)
 app.get("/admin/survey-data", async (req, res) => {
-    if (!req.session.username) return res.redirect('/login');
+    // Open to all logged-in users
+    if (!req.session.username) {
+        return res.redirect('/login');
+    }
 
     try {
         const responses = await knex('surveys')
-            // DIRECT JOIN: Surveys -> Schedule -> Events
+            // Link Surveys -> Schedule -> Events
             .join('event_schedule', 'surveys.scheduleid', '=', 'event_schedule.scheduleid')
             .join('events', 'event_schedule.eventid', '=', 'events.eventid')
-            // DIRECT JOIN: Surveys -> Participants
+            // Link Surveys -> Participants
             .join('participants', 'surveys.participantid', '=', 'participants.participantid')
             .select(
                 'surveys.surveyid',
@@ -919,7 +1001,6 @@ app.get("/survey/edit/:id", async (req, res) => {
     if (!req.session.username || req.session.level !== 'M') return res.redirect('/admin/survey-data');
 
     try {
-        // FIXED JOIN: Link Surveys directly to Schedule and Participants
         const survey = await knex('surveys')
             .join('event_schedule', 'surveys.scheduleid', '=', 'event_schedule.scheduleid')
             .join('events', 'event_schedule.eventid', '=', 'events.eventid')
@@ -950,10 +1031,10 @@ app.post("/survey/edit/:id", async (req, res) => {
     const { satisfaction, usefulness, recommendation, comments } = req.body;
 
     try {
-        // Recalculate NPS since they might change the score
+        // Recalculate NPS
         let npsBucket = 'Passive';
         const recScore = parseInt(recommendation);
-        if (recScore >= 5) npsBucket = 'Promoter'; // Based on 1-5 scale
+        if (recScore >= 5) npsBucket = 'Promoter'; 
         if (recScore <= 3) npsBucket = 'Detractor';
 
         await knex('surveys')

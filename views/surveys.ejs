@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><!-- Title -->
+<head>
     <title>Program Feedback - Ella Rises</title>
-    <%- include('partials/head') %> <!-- HEader -->
+    <%- include('partials/head') %>
     <style>
         /* --- RATING CIRCLES --- */
         .rating-group {
@@ -86,7 +86,7 @@
     </style>
 </head>
 <body class="bg-light">
-<!-- Header -->
+
     <%- include('partials/header') %>
 
     <div class="container mt-4 mb-5" style="max-width: 600px;">
@@ -102,120 +102,137 @@
             </div>
 
             <div class="card-body p-4 p-md-5">
-                <!-- Survey submit route-->
-                <form action="/survey/submit" method="POST">
+                
+                <% if (!myParticipants || myParticipants.length === 0) { %>
+                    
+                    <div class="text-center py-4">
+                        <div class="mb-3 text-muted">
+                            <i class="bi bi-people display-1 opacity-25"></i>
+                        </div>
+                        <h4 class="fw-bold text-secondary">No Participants Found</h4>
+                        <p class="text-muted small mb-4">
+                            You must have a participant linked to your account to submit feedback.
+                        </p>
+                        <a href="/participants/add" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                            <i class="bi bi-plus-lg me-1"></i> Add Participant
+                        </a>
+                    </div>
 
-                    <% if (myParticipants && myParticipants.length === 1) { %>
-                        <input type="hidden" name="participantId" value="<%= myParticipants[0].participantid %>">
-                    <% } else { %>
-                        <div class="mb-4">
-                            <label for="participantId" class="form-label fw-bold text-dark">Who attended?</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-person"></i></span>
-                                <select class="form-select border-start-0 ps-0" id="participantId" name="participantId" required style="background-color: #f8f9fa;">
-                                    <option value="" selected disabled>-- Select Child --</option>
-                                    <% if (myParticipants && myParticipants.length > 0) { %>
+                <% } else { %>
+
+                    <form action="/survey/submit" method="POST">
+
+                        <% if (myParticipants.length === 1) { %>
+                            <input type="hidden" name="participantId" value="<%= myParticipants[0].participantid %>">
+                        <% } else { %>
+                            <div class="mb-4">
+                                <label for="participantId" class="form-label fw-bold text-dark">Who attended?</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-person"></i></span>
+                                    <select class="form-select border-start-0 ps-0" id="participantId" name="participantId" required style="background-color: #f8f9fa;">
+                                        <option value="" selected disabled>-- Select Child --</option>
                                         <% myParticipants.forEach(p => { %>
                                             <option value="<%= p.participantid %>">
                                                 <%= p.participantfirstname %> <%= p.participantlastname %>
                                             </option>
                                         <% }) %>
+                                    </select>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <div class="mb-5">
+                            <label for="scheduleId" class="form-label fw-bold text-dark">Which event are you reviewing?</label>
+                            
+                            <div class="input-group mb-2">
+                                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                <input type="text" class="form-control border-start-0" id="eventSearch" placeholder="Type to filter events..." onkeyup="filterEvents()">
+                            </div>
+
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-calendar-event"></i></span>
+                                <select class="form-select border-start-0 ps-0" id="scheduleId" name="scheduleId" required style="background-color: #f8f9fa;" size="5">
+                                    <option value="" selected disabled>-- Select an Event --</option>
+                                    <% if (pastEvents && pastEvents.length > 0) { %>
+                                        <% pastEvents.forEach(e => { %>
+                                            <option value="<%= e.scheduleid %>">
+                                                <%= e.eventname %> (<%= new Date(e.eventdatetimestart).toLocaleDateString() %>)
+                                            </option>
+                                        <% }) %>
+                                    <% } else { %>
+                                        <option disabled>No past events found.</option>
                                     <% } %>
                                 </select>
                             </div>
-                        </div>
-                    <% } %>
-
-                    <div class="mb-5">
-                        <label for="scheduleId" class="form-label fw-bold text-dark">Which event are you reviewing?</label>
-                        
-                        <div class="input-group mb-2">
-                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" class="form-control border-start-0" id="eventSearch" placeholder="Type to filter events..." onkeyup="filterEvents()">
+                            <div class="form-text small">Select the event from the list above.</div>
                         </div>
 
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-calendar-event"></i></span>
-                            <select class="form-select border-start-0 ps-0" id="scheduleId" name="scheduleId" required style="background-color: #f8f9fa;" size="5">
-                                <option value="" selected disabled>-- Select an Event --</option>
-                                <% if (pastEvents && pastEvents.length > 0) { %>
-                                    <% pastEvents.forEach(e => { %>
-                                        <option value="<%= e.scheduleid %>">
-                                            <%= e.eventname %> (<%= new Date(e.eventdatetimestart).toLocaleDateString() %>)
-                                        </option>
-                                    <% }) %>
-                                <% } else { %>
-                                    <option disabled>No past events found.</option>
-                                <% } %>
-                            </select>
-                        </div>
-                        <div class="form-text small">Select the event from the list above.</div>
-                    </div>
+                        <div class="section-title"><span>Experience Ratings</span></div>
 
-                    <div class="section-title"><span>Experience Ratings</span></div>
-
-                    <div class="mb-5 text-center">
-                        <label class="form-label fw-bold d-block mb-2">Overall Satisfaction</label>
-                        <div class="d-flex justify-content-between px-3 small text-muted text-uppercase fw-bold mb-1">
-                            <span>Poor</span>
-                            <span>Excellent</span>
-                        </div>
-                        <div class="rating-group">
-                            <% for(let i=1; i<=5; i++) { %>
-                                <input type="radio" class="rating-input" name="satisfaction" id="sat<%= i %>" value="<%= i %>" required>
-                                <label class="rating-label" for="sat<%= i %>"><%= i %></label>
-                            <% } %>
-                        </div> <!-- Ratings -->
-                    </div>
-
-                    <div class="row mb-4">
-                        <div class="col-md-12 text-center mb-4">
-                            <label class="form-label fw-bold d-block text-secondary small">Content Usefulness</label>
-                             <div class="rating-group justify-content-center">
+                        <div class="mb-5 text-center">
+                            <label class="form-label fw-bold d-block mb-2">Overall Satisfaction</label>
+                            <div class="d-flex justify-content-between px-3 small text-muted text-uppercase fw-bold mb-1">
+                                <span>Poor</span>
+                                <span>Excellent</span>
+                            </div>
+                            <div class="rating-group">
                                 <% for(let i=1; i<=5; i++) { %>
-                                    <input type="radio" class="rating-input" name="usefulness" id="use<%= i %>" value="<%= i %>" required>
-                                    <label class="rating-label" style="width:35px; height:35px; font-size: 0.9rem;" for="use<%= i %>"><%= i %></label>
+                                    <input type="radio" class="rating-input" name="satisfaction" id="sat<%= i %>" value="<%= i %>" required>
+                                    <label class="rating-label" for="sat<%= i %>"><%= i %></label>
                                 <% } %>
-                            </div> <!-- Raintgs -->
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="section-title mt-5"><span>Recommendation</span></div>
-
-                    <div class="mb-5 text-center">
-                        <label class="form-label fw-bold d-block">How likely are you to recommend us?</label>
-                        <div class="d-flex justify-content-between px-3 small text-muted text-uppercase fw-bold mb-1">
-                            <span>Not Likely</span>
-                            <span>Very Likely</span>
+                        <div class="row mb-4">
+                            <div class="col-md-12 text-center mb-4">
+                                <label class="form-label fw-bold d-block text-secondary small">Content Usefulness</label>
+                                <div class="rating-group justify-content-center">
+                                    <% for(let i=1; i<=5; i++) { %>
+                                        <input type="radio" class="rating-input" name="usefulness" id="use<%= i %>" value="<%= i %>" required>
+                                        <label class="rating-label" style="width:35px; height:35px; font-size: 0.9rem;" for="use<%= i %>"><%= i %></label>
+                                    <% } %>
+                                </div>
+                            </div>
                         </div>
-                        <div class="rating-group">
-                            <% for(let i=1; i<=5; i++) { %>
-                                <input type="radio" class="rating-input" name="recommendation" id="rec<%= i %>" value="<%= i %>" required>
-                                <label class="rating-label" for="rec<%= i %>"><%= i %></label>
-                            <% } %>
+
+                        <div class="section-title mt-5"><span>Recommendation</span></div>
+
+                        <div class="mb-5 text-center">
+                            <label class="form-label fw-bold d-block">How likely are you to recommend us?</label>
+                            <div class="d-flex justify-content-between px-3 small text-muted text-uppercase fw-bold mb-1">
+                                <span>Not Likely</span>
+                                <span>Very Likely</span>
+                            </div>
+                            <div class="rating-group">
+                                <% for(let i=1; i<=5; i++) { %>
+                                    <input type="radio" class="rating-input" name="recommendation" id="rec<%= i %>" value="<%= i %>" required>
+                                    <label class="rating-label" for="rec<%= i %>"><%= i %></label>
+                                <% } %>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="mb-4">
-                        <label for="comments" class="form-label fw-bold">Additional Comments</label>
-                        <textarea class="form-control bg-light" id="comments" name="comments" rows="4" placeholder="What did you enjoy? What can we improve?"></textarea>
-                    </div>
+                        <div class="mb-4">
+                            <label for="comments" class="form-label fw-bold">Additional Comments</label>
+                            <textarea class="form-control bg-light" id="comments" name="comments" rows="4" placeholder="What did you enjoy? What can we improve?"></textarea>
+                        </div>
 
-                    <div class="d-grid mt-5">
-                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">Submit Feedback</button>
-                    </div>
+                        <div class="d-grid mt-5">
+                            <button type="submit" class="btn btn-primary btn-lg shadow-sm">Submit Feedback</button>
+                        </div>
 
-                </form>
-            </div>
+                    </form>
+                <% } %> </div>
         </div>
     </div>
- <!-- footer -->
+
     <%- include('partials/footer') %>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
         function filterEvents() {
             const input = document.getElementById('eventSearch');
+            if (!input) return; // Guard clause if element missing
+            
             const filter = input.value.toLowerCase();
             const select = document.getElementById('scheduleId');
             const options = select.getElementsByTagName('option');
