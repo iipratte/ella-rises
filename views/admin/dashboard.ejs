@@ -2,19 +2,46 @@
 <html lang="en">
 <head>
   <title>Dashboard - Ella Rises</title>
+
+  <!-- shared header -->
   <%- include('../partials/head') %>
 
+  <!-- Google fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
+  <!-- Page styles just for the dashboard -->
   <style>
-    body { font-family: 'Montserrat', sans-serif; background-color: #f8f9fa; }
-    h1, h2, h3 { font-family: 'DM Serif Display', serif; }
-    .kpi-card { transition: transform 0.2s; border: none; border-radius: 12px; }
-    .kpi-card:hover { transform: translateY(-5px); }
-    .dashboard-container { background: white; border-radius: 15px; min-height: 600px; }
+    /* Main font with the light grey background */
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: #f8f9fa;
+    }
 
-    /* Make Tableau always full width inside the card */
+    /* font for headings */
+    h1, h2, h3 {
+      font-family: 'DM Serif Display', serif;
+    }
+
+    /* card styling and hover effect */
+    .kpi-card {
+      transition: transform 0.2s;
+      border: none;
+      border-radius: 12px;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-5px);
+    }
+
+    /* Wrapper for main dashboard */
+    .dashboard-container {
+      background: white;
+      border-radius: 15px;
+      min-height: 600px;
+    }
+
+    /* Make Tableau take up full page */
     .tableauPlaceholder,
     .tableauPlaceholder object,
     .tableauPlaceholder iframe {
@@ -24,37 +51,45 @@
   </style>
 </head>
 <body>
-
+  <!-- Reused header for site -->
   <%- include('../partials/header') %>
 
   <div class="container mt-4">
-    <!-- Top welcome row -->
+    <!-- welcome adn user info -->
     <div class="row mb-4 align-items-center">
       <div class="col-md-8">
         <h1 class="display-6">
+          <!-- Show user's first name -->
           Welcome, <span class="text-primary"><%= user.firstName %></span>!
         </h1>
-        <p class="text-muted">Here is an overview of the Ella Rises program impact.</p>
+        <p class="text-muted">
+          Here is an overview of the Ella Rises program impact.
+        </p>
       </div>
+
       <div class="col-md-4 text-end">
+        <!-- badges for role and status -->
         <span class="badge bg-secondary p-2">Role: <%= user.role %></span>
         <span class="badge bg-success p-2">Status: Active</span>
       </div>
     </div>
 
-    <!-- KPI cards -->
-<div class="row g-4 mb-5">
-      
+    <!-- KPI cards  -->
+    <div class="row g-4 mb-5">
+      <!-- Total Participants -->
       <div class="col-md-3">
         <div class="card kpi-card shadow-sm text-center py-4">
           <div class="card-body">
             <h5 class="text-muted mb-2">Total Participants</h5>
-            <h2 class="fw-bold text-dark"><%= Number(stats.participants).toLocaleString() %></h2>
-            <small class="text-success"><i class="bi bi-people-fill"></i> Active Community</small>
+            <h2 class="fw-bold text-dark">1,240</h2>
+            <small class="text-success">
+              <i class="bi bi-arrow-up"></i> 12% this month
+            </small>
           </div>
         </div>
       </div>
 
+      <!-- Active Events -->
       <div class="col-md-3">
         <div class="card kpi-card shadow-sm text-center py-4">
           <div class="card-body">
@@ -65,6 +100,7 @@
         </div>
       </div>
 
+      <!-- Survey Responses -->
       <div class="col-md-3">
         <div class="card kpi-card shadow-sm text-center py-4">
           <div class="card-body">
@@ -75,39 +111,46 @@
         </div>
       </div>
 
+      <!-- Donations -->
       <div class="col-md-3">
         <div class="card kpi-card shadow-sm text-center py-4">
           <div class="card-body">
-            <h5 class="text-muted mb-2">Total Donations</h5>
-            <h2 class="fw-bold text-dark">
-                $<%= Number(stats.donations).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}) %>
-            </h2>
-            <small class="text-success"><i class="bi bi-cash-coin"></i> Lifetime Raised</small>
+            <h5 class="text-muted mb-2">Donations YTD</h5>
+            <h2 class="fw-bold text-dark">$42,500</h2>
+            <small class="text-success">
+              <i class="bi bi-arrow-up"></i> Goal Met!
+            </small>
           </div>
         </div>
       </div>
     </div>
-    
-    <!-- Tableau card -->
+
+    <!-- Tableau section -->
     <div class="card shadow-sm border-0">
       <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
         <h4 class="mb-0">Program Impact Analytics</h4>
+
+        <!-- Filter button  -->
         <button class="btn btn-outline-primary btn-sm">
           <i class="bi bi-filter"></i> Filter Data
         </button>
       </div>
 
       <div class="card-body p-0">
-        <!-- Full-width Tableau embed -->
+        <!-- Tableau embed container -->
         <div class="tableauPlaceholder" id="viz1764800147210" style="position:relative; width:100%;">
           <noscript>
+            <!-- Backup image  -->
             <a href="#">
-              <img alt="Dashboard 1"
+              <img
+                alt="Dashboard 1"
                 src="https://public.tableau.com/static/images/In/IntexDashboard_17647953832920/Dashboard1/1_rss.png"
-                style="border:none;">
+                style="border:none;"
+              >
             </a>
           </noscript>
 
+          <!-- Actual Tableau viz -->
           <object class="tableauViz" style="width:100%; height:700px;">
             <param name="host_url" value="https%3A%2F%2Fpublic.tableau.com%2F" />
             <param name="embed_code_version" value="3" />
@@ -115,8 +158,10 @@
             <param name="name" value="IntexDashboard_17647953832920/Dashboard1" />
             <param name="tabs" value="no" />
             <param name="toolbar" value="yes" />
-            <param name="static_image"
-                   value="https://public.tableau.com/static/images/In/IntexDashboard_17647953832920/Dashboard1/1.png" />
+            <param
+              name="static_image"
+              value="https://public.tableau.com/static/images/In/IntexDashboard_17647953832920/Dashboard1/1.png"
+            />
             <param name="animate_transition" value="yes" />
             <param name="display_static_image" value="yes" />
             <param name="display_spinner" value="yes" />
@@ -128,24 +173,33 @@
       </div>
     </div>
   </div>
+
+  <!-- Little gap before the footer -->
   <br>
   <br>
 
+  <!-- Shared footer -->
   <%- include('../partials/footer') %>
 
-  <!-- Scripts -->
+  <!-- Bootstrap JS  -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script type="text/javascript">
-    // Basic Tableau embed script, full-width
+    // Grab the Tableau container
     var divElement = document.getElementById('viz1764800147210');
-    var vizElement = divElement.getElementsByTagName('object')[0];
-    vizElement.style.width = '100%';
-    vizElement.style.height = '700px'; // adjust height if needed
 
+    // This is the embedded Tableau object
+    var vizElement = divElement.getElementsByTagName('object')[0];
+
+    // Make the viz full page with height
+    vizElement.style.width = '100%';
+    vizElement.style.height = '700px'; 
+
+    // Load Tableau's JS so the dashboard actually shows up
     var scriptElement = document.createElement('script');
     scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
     vizElement.parentNode.insertBefore(scriptElement, vizElement);
   </script>
 </body>
 </html>
+

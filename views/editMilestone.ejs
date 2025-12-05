@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head> <!-- Title-->
     <title>Edit Milestone - Ella Rises</title>
     <%- include('partials/head') %>
 </head>
 <body class="bg-light">
-
+<!-- Header-->
     <%- include('partials/header') %>
 
     <div class="container mt-5" style="max-width: 600px;">
@@ -15,7 +15,7 @@
                 <small class="text-white-50">For <%= participant.participantfirstname %> <%= participant.participantlastname %></small>
             </div>
             <div class="card-body p-4">
-                
+                 <!-- Edit milestone route-->
                 <form action="/milestones/edit/<%= milestone.milestoneid %>" method="POST">
                     
                     <div class="mb-3">
@@ -23,7 +23,7 @@
                         <input type="text" class="form-control" id="milestoneTitle" name="milestoneTitle" 
                                value="<%= milestone.milestonetitle %>" required>
                     </div>
-
+                    <!-- CHnage date form-->
                     <div class="mb-3">
                         <label for="milestoneDate" class="form-label fw-bold">Date Achieved</label>
                         <% 
@@ -51,7 +51,7 @@
             </div>
         </div>
     </div>
-
+<!-- Footer -->
     <%- include('partials/footer') %>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

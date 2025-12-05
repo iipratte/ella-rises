@@ -1500,7 +1500,7 @@ app.get("/teapot", (req, res) => {
     if (!req.session.username) {
         return res.redirect('/login');
     }
-    res.status(418).send("418: I'm a little Teapot (Short and stout)");
+    res.status(418).render("teapot");
 });
 
 // =========================================
