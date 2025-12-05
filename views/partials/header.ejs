@@ -22,6 +22,7 @@
             <a class="nav-link" href="/events">Events</a>
           </li>
           
+          <!-- Links to different views if user -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="communityDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                Community
@@ -33,6 +34,7 @@
             </ul>
           </li>
 
+          <!-- Links to different views if user -->
           <li class="nav-item">
             <a class="nav-link" href="/survey">Take Survey</a>
           </li>
@@ -43,6 +45,7 @@
             <a class="nav-link" href="/milestones">Milestones</a>
           </li>
 
+          <!-- Links to different views if user or admin -->
           <% if (user.role === 'Manager' || user.isAdmin) { %>
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle text-warning" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -60,6 +63,14 @@
 
       <div class="d-flex align-items-center gap-2 ms-3">
 
+        <!-- Translate button (always visible, even when logged out) -->
+        <button class="btn btn-outline-secondary rounded-pill px-3"
+                type="button"
+                onclick="doGTranslate('en|es')">
+          Español
+        </button>
+
+        <!-- Donate, login, and signup buttons -->
         <% if (!user) { %>
           <a href="/donate" class="btn btn-warning fw-bold text-dark rounded-pill px-4" style="font-size: 0.75rem;">
             Donate Now
@@ -78,6 +89,8 @@
               <span class="fw-bold">Hi, <%= user.firstName %></span>
             </button>
             
+
+            <!-- Account and logout buttons -->
             <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="userMenuButton">
               <li>
                 <a class="dropdown-item py-2" href="/account">
