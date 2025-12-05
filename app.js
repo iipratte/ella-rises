@@ -891,38 +891,34 @@ app.get("/admin/survey-data", async (req, res) => {
 
 // --- MILESTONES ---
 
-// 1. LIST ALL MILESTONES (With Search)
+// 1. LIST ALL MILESTONES (With Search) - Managers Only (Global View)
 app.get("/milestones", async (req, res) => {
-    // 1. Security Check
-    if (!req.session.username) {
-        return res.redirect('/login');
-    }
+    if (!req.session.username) return res.redirect('/login');
 
-    // 2. Get search params
     const { firstName, lastName } = req.query;
 
     try {
-        // 3. Build Query
         let query = knex('participants').orderBy('participantlastname', 'asc');
+
+        // If not manager, only show their own participants
+        if (req.session.level !== 'M') {
+            query = query.where('username', req.session.username);
+        }
 
         if (firstName) query = query.where('participantfirstname', 'ilike', `%${firstName}%`);
         if (lastName) query = query.where('participantlastname', 'ilike', `%${lastName}%`);
 
         const participants = await query;
         
-        // 4. Fetch Milestones
         const milestones = await knex('milestones')
             .select('milestoneid', 'participantid', 'milestonetitle', 'milestonedate', 'milestonenotes')
             .orderBy('milestonedate', 'desc');
 
-        // 5. Combine
-        // SAFEGUARD: Ensure participants is an array
         const safeParticipants = Array.isArray(participants) ? participants : [];
 
         const participantsWithMilestones = safeParticipants.map(p => {
             return {
                 ...p,
-                // Loose equality (==) handles string vs int ID types
                 milestones: milestones.filter(m => m.participantid == p.participantid) 
             };
         });
@@ -935,39 +931,50 @@ app.get("/milestones", async (req, res) => {
 
     } catch (err) {
         console.error("Error in /milestones:", err);
-        // Render empty page on error, don't redirect
-        res.render("milestones", { 
-            participants: [], 
-            searchFirstName: '', 
-            searchLastName: '' 
-        });
+        res.render("milestones", { participants: [], searchFirstName: '', searchLastName: '' });
     }
 });
 
-// 2. VIEW DETAILS (Specific Participant)
+// 2. VIEW DETAILS (Specific Participant) - UPDATED: Allows Manager OR Owner
 app.get("/milestones/view/:id", async (req, res) => {
-    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    if (!req.session.username) return res.redirect('/login');
 
     try {
         const participant = await knex('participants').where({ participantid: req.params.id }).first();
+        if (!participant) return res.redirect('/participants');
+
+        // PERMISSION CHECK: Manager OR Owner
+        const isOwner = participant.username === req.session.username;
+        const isManager = req.session.level === 'M';
+
+        if (!isManager && !isOwner) {
+            return res.redirect('/participants');
+        }
+
         const milestones = await knex('milestones')
             .where({ participantid: req.params.id })
             .orderBy('milestonedate', 'desc');
 
-        // Ensure this view exists in the right place (e.g., views/milestoneDetails.ejs)
         res.render("milestoneDetails", { participant, milestones });
     } catch (err) {
         console.error("Error fetching detail:", err);
-        res.redirect('/milestones');
+        res.redirect('/participants');
     }
 });
 
-// 3. ADD MILESTONE (GET)
+// 3. ADD MILESTONE (GET) - UPDATED: Allows Manager OR Owner
 app.get("/milestones/add/:id", async (req, res) => {
-    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    if (!req.session.username) return res.redirect('/login');
     
     try {
         const participant = await knex('participants').where({ participantid: req.params.id }).first();
+        if (!participant) return res.redirect('/participants');
+
+        const isOwner = participant.username === req.session.username;
+        const isManager = req.session.level === 'M';
+
+        if (!isManager && !isOwner) return res.redirect('/participants');
+
         res.render("addMilestone", { participant });
     } catch (err) {
         console.error("Error getting add form:", err);
@@ -975,35 +982,49 @@ app.get("/milestones/add/:id", async (req, res) => {
     }
 });
 
-// 4. ADD MILESTONE (POST)
+// 4. ADD MILESTONE (POST) - UPDATED: Allows Manager OR Owner
 app.post("/milestones/add/:id", async (req, res) => {
-    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    if (!req.session.username) return res.redirect('/login');
 
     const { milestoneTitle, milestoneDate, notes } = req.body;
 
     try {
+        // Double check permission on POST
+        const participant = await knex('participants').where({ participantid: req.params.id }).first();
+        const isOwner = participant.username === req.session.username;
+        const isManager = req.session.level === 'M';
+
+        if (!isManager && !isOwner) return res.redirect('/participants');
+
         await knex('milestones').insert({
             participantid: req.params.id,
             milestonetitle: milestoneTitle,
             milestonedate: milestoneDate,
             milestonenotes: notes
         });
-        res.redirect('/milestones');
+        
+        // Redirect back to the specific view for this participant
+        res.redirect(`/milestones/view/${req.params.id}`);
     } catch (err) {
         console.error("Error creating milestone:", err);
         res.send("Error adding milestone.");
     }
 });
 
-// 5. EDIT MILESTONE (GET) - NEW
+// 5. EDIT MILESTONE (GET) - UPDATED: Allows Manager OR Owner
 app.get("/milestones/edit/:id", async (req, res) => {
-    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    if (!req.session.username) return res.redirect('/login');
 
     try {
         const milestone = await knex('milestones').where({ milestoneid: req.params.id }).first();
         if (!milestone) return res.redirect('/milestones');
 
         const participant = await knex('participants').where({ participantid: milestone.participantid }).first();
+        
+        const isOwner = participant.username === req.session.username;
+        const isManager = req.session.level === 'M';
+
+        if (!isManager && !isOwner) return res.redirect('/participants');
         
         res.render("editMilestone", { milestone, participant });
     } catch (err) {
@@ -1012,13 +1033,21 @@ app.get("/milestones/edit/:id", async (req, res) => {
     }
 });
 
-// 6. EDIT MILESTONE (POST) - NEW
+// 6. EDIT MILESTONE (POST) - UPDATED: Allows Manager OR Owner
 app.post("/milestones/edit/:id", async (req, res) => {
-    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    if (!req.session.username) return res.redirect('/login');
 
     const { milestoneTitle, milestoneDate, notes } = req.body;
 
     try {
+        const milestone = await knex('milestones').where({ milestoneid: req.params.id }).first();
+        const participant = await knex('participants').where({ participantid: milestone.participantid }).first();
+        
+        const isOwner = participant.username === req.session.username;
+        const isManager = req.session.level === 'M';
+
+        if (!isManager && !isOwner) return res.redirect('/participants');
+
         await knex('milestones')
             .where({ milestoneid: req.params.id })
             .update({
@@ -1027,24 +1056,34 @@ app.post("/milestones/edit/:id", async (req, res) => {
                 milestonenotes: notes
             });
         
-        res.redirect('/milestones');
+        res.redirect(`/milestones/view/${participant.participantid}`);
     } catch (err) {
         console.error("Error updating milestone:", err);
         res.send("Error updating milestone.");
     }
 });
 
-// 7. DELETE MILESTONE
+// 7. DELETE MILESTONE - UPDATED: Allows Manager OR Owner
 app.post("/milestones/delete/:id", async (req, res) => {
-    if (!req.session.username || req.session.level !== 'M') return res.redirect('/');
+    if (!req.session.username) return res.redirect('/login');
     
     try {
-        // Delete by primary key (milestoneid)
-        await knex('milestones').where({ milestoneid: req.params.id }).del();
-        res.redirect('/milestones');
+        const milestone = await knex('milestones').where({ milestoneid: req.params.id }).first();
+        if (milestone) {
+            const participant = await knex('participants').where({ participantid: milestone.participantid }).first();
+            
+            const isOwner = participant.username === req.session.username;
+            const isManager = req.session.level === 'M';
+
+            if (isManager || isOwner) {
+                await knex('milestones').where({ milestoneid: req.params.id }).del();
+                return res.redirect(`/milestones/view/${participant.participantid}`);
+            }
+        }
+        res.redirect('/participants');
     } catch(err) {
         console.error("Delete error", err);
-        res.redirect('/milestones');
+        res.redirect('/participants');
     }
 });
 
