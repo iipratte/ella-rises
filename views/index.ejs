@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Ella Rises - Empowering Latinas</title>
+    <title>Ella Rises - Empowering The Rising Generation</title>
     <%- include('partials/head') %> 
 
     <style>
@@ -34,20 +34,23 @@
 </head>
 <body>
 
+    <!-- Header -->
     <%- include('partials/header') %>
 
     <header class="py-5 bg-light border-bottom mb-4" 
             style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://static.wixstatic.com/media/118ed8_6f37f2d9484b41f0a91b61e44b10d262~mv2.jpg/v1/fill/w_1341,h_710,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/118ed8_6f37f2d9484b41f0a91b61e44b10d262~mv2.jpg'); background-size: cover; background-position: center; color: white; padding: 100px 0;">
         <div class="container text-center my-5">
+            <!-- Main display -->
             <h1 class="fw-bolder display-3 mb-3">Empowering the Rising Generation</h1>
             <p class="lead mb-4" style="max-width: 700px; margin: 0 auto; font-weight: 300;">
-                We inspire Latinas to pursue higher education and embrace their heritage through mentoring, creative workshops, and leadership opportunities.
+                Inviting young women to pursue higher education and embrace their heritage by providing culturally rooted programs and educational experiences.
             </p>
             <a class="btn btn-primary btn-lg me-2" href="/donate">Support Our Cause</a>
             <a class="btn btn-outline-light btn-lg" href="/events">View Events</a>
         </div>
     </header>
 
+    <!-- Info tidbits -->
     <div class="container mb-5">
         <div class="row text-center">
             <div class="col-lg-4 mb-5">
@@ -74,7 +77,7 @@
         </div>
     </div>
 
-    <!-- SINGLE section for the carousel (no extra bg-light wrapper) -->
+    <!-- SINGLE section for the carousel -->
     <section class="py-5" style="background-color: var(--er-white);">
         <div class="container">
             <div class="row justify-content-center">
@@ -129,12 +132,17 @@
         </div>
     </section>
 
+    <!-- Donation section -->
     <section class="py-5" style="background-color: var(--er-sage); color: white;">
         <div class="container px-5 my-5">
             <div class="text-center">
                 <h2 class="fw-bolder display-5 text-white mb-3" style="font-family: 'Playfair Display', serif;">Ready to make a difference?</h2>
                 <p class="lead fw-normal mb-5" style="color: rgba(255,255,255,0.9);">
-                    Your donation provides art supplies, transportation, and scholarships for the rising generation.
+                    Ella Rises is a nonprofit organization. If you would like to donate through our GiveButter Campaign, click below.
+
+If you would like to further discuss how you would like to contribute, please email nadia@ellarises.org.
+
+¡Muchas gracias!
                 </p>
                 <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
                     <a class="btn btn-lg px-5 me-sm-3 shadow-sm" href="/donate" 
@@ -146,6 +154,7 @@
         </div>
     </section>
 
+    <!-- Footer -->
     <%- include('partials/footer') %>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
