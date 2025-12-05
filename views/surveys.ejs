@@ -1,148 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Program Feedback - Ella Rises</title>
-    <%- include('partials/head') %>
-    <style>
-        /* Custom Styles for Rating Circles */
-        .rating-group {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .rating-input { display: none; }
+<div class="section-title mt-5"><span>Recommendation</span></div>
 
-        .rating-label {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #fff;
-            border: 2px solid #dee2e6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            color: #6c757d;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .rating-input:checked + .rating-label {
-            background-color: var(--er-primary);
-            border-color: var(--er-primary);
-            color: white;
-            transform: scale(1.1);
-        }
-        
-        .rating-label:hover {
-            border-color: var(--er-primary-dark);
-            color: var(--er-primary-dark);
-        }
-
-        /* NPS 0-10 Scale Styling */
-        .nps-group { gap: 5px; }
-        .nps-label { width: 35px; height: 35px; font-size: 0.8rem; }
-    </style>
-</head>
-<body class="bg-light">
-
-    <%- include('partials/header') %>
-
-    <div class="container mt-5 mb-5" style="max-width: 700px;">
-        <div class="card shadow border-0">
-            <div class="card-header bg-primary text-white text-center py-4">
-                <h2 class="fw-bold mb-1" style="font-family: 'DM Serif Display', serif;">Program Feedback</h2>
-                <p class="mb-0 text-white-50">Your voice helps us grow.</p>
-            </div>
-            <div class="card-body p-4">
-                
-                <form action="/survey/submit" method="POST">
-
-                    <div class="mb-4">
-                        <label for="registrationId" class="form-label fw-bold">Which event are you reviewing?</label>
-                        <select class="form-select" id="registrationId" name="registrationId" required>
-                            <option value="" selected disabled>-- Select an Event you attended --</option>
-                            <% if (events && events.length > 0) { %>
-                                <% events.forEach(e => { %>
-                                    <option value="<%= e.registrationid %>">
-                                        <%= e.eventname %> (<%= new Date(e.eventdatetimestart).toLocaleDateString() %>)
-                                    </option>
-                                <% }) %>
-                            <% } else { %>
-                                <option disabled>No recent registrations found</option>
-                            <% } %>
-                        </select>
-                    </div>
-
-                    <hr class="my-4 opacity-10">
-
-                    <div class="mb-4 text-center">
-                        <label class="form-label fw-bold d-block">Overall Satisfaction</label>
-                        <div class="d-flex justify-content-between small text-muted px-5 mb-1">
-                            <span>Poor</span><span>Excellent</span>
+                    <div class="mb-5 text-center">
+                        <label class="form-label fw-bold d-block">How likely are you to recommend us?</label>
+                        <div class="d-flex justify-content-center justify-content-md-between px-md-5 small text-muted mb-1" style="max-width: 400px; margin: 0 auto;">
+                            <span>Not Likely</span>
+                            <span>Very Likely</span>
                         </div>
+                        
                         <div class="rating-group">
                             <% for(let i=1; i<=5; i++) { %>
-                                <input type="radio" class="rating-input" name="satisfaction" id="sat<%= i %>" value="<%= i %>" required>
-                                <label class="rating-label" for="sat<%= i %>"><%= i %></label>
-                            <% } %>
-                        </div>
-                    </div>
-
-                    <div class="mb-4 text-center">
-                        <label class="form-label fw-bold d-block">Content Usefulness</label>
-                        <div class="rating-group">
-                            <% for(let i=1; i<=5; i++) { %>
-                                <input type="radio" class="rating-input" name="usefulness" id="use<%= i %>" value="<%= i %>" required>
-                                <label class="rating-label" for="use<%= i %>"><%= i %></label>
-                            <% } %>
-                        </div>
-                    </div>
-
-                    <div class="mb-4 text-center">
-                        <label class="form-label fw-bold d-block">Instructor Quality</label>
-                        <div class="rating-group">
-                            <% for(let i=1; i<=5; i++) { %>
-                                <input type="radio" class="rating-input" name="instructor" id="inst<%= i %>" value="<%= i %>" required>
-                                <label class="rating-label" for="inst<%= i %>"><%= i %></label>
-                            <% } %>
-                        </div>
-                    </div>
-
-                    <hr class="my-4 opacity-10">
-
-                    <div class="mb-4 text-center">
-                        <label class="form-label fw-bold d-block">Likelihood to Recommend (NPS)</label>
-                        <p class="small text-muted mb-2">How likely are you to recommend Ella Rises to a friend?</p>
-                        <div class="d-flex justify-content-between small text-muted px-2 mb-1">
-                            <span>Not Likely</span><span>Very Likely</span>
-                        </div>
-                        <div class="rating-group nps-group">
-                            <% for(let i=0; i<=10; i++) { %>
                                 <input type="radio" class="rating-input" name="recommendation" id="rec<%= i %>" value="<%= i %>" required>
-                                <label class="rating-label nps-label" for="rec<%= i %>"><%= i %></label>
+                                <label class="rating-label" for="rec<%= i %>"><%= i %></label>
                             <% } %>
                         </div>
                     </div>
-
-                    <div class="mb-4">
-                        <label for="comments" class="form-label fw-bold">Additional Comments</label>
-                        <textarea class="form-control" id="comments" name="comments" rows="3" placeholder="Share your thoughts..."></textarea>
-                    </div>
-
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary py-2">Submit Feedback</button>
-                    </div>
-
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <%- include('partials/footer') %>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>

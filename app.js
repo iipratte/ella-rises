@@ -231,40 +231,46 @@ app.get('/logout', (req, res) => {
 // 6. PROTECTED USER ROUTES
 // =========================================
 
-app.get("/admin/dashboard", (req, res) => {
+app.get("/admin/dashboard", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
-    // Security Check: Only Managers can access dashboard
     if (req.session.level !== 'M') return res.redirect('/');
-    res.render("admin/dashboard");
-});
-
-// --- ACCOUNT MANAGEMENT ROUTES ---
-
-// 1. Show Account Page
-app.get("/account", async (req, res) => {
-    if (!req.session.username) return res.redirect('/login');
 
     try {
-        // 1. Fetch User Details
-        const user = await knex('users').where({ username: req.session.username }).first();
-        
-        // 2. Fetch Linked Participant Details (for School/Interest fields)
-        const participant = await knex('participants').where({ username: req.session.username }).first();
+        // 1. Count Total Participants
+        const partResult = await knex('participants').count('participantid as count').first();
+        const participantCount = partResult.count;
 
-        // Data Mapping for Header/View
-        user.firstName = user.firstname; 
-        user.role = user.level === 'M' ? 'Manager' : 'User';
+        // 2. Count Active (Upcoming) Events
+        const eventResult = await knex('event_schedule')
+            .where('eventdatetimestart', '>=', new Date())
+            .count('scheduleid as count')
+            .first();
+        const eventCount = eventResult.count;
 
-        // Pass both user and participant to the view
-        res.render("account", { 
-            user, 
-            participant: participant || {}, // Pass empty object if no participant record exists
-            success: req.query.success 
+        // 3. Count Survey Responses
+        const surveyResult = await knex('surveys').count('surveyid as count').first();
+        const surveyCount = surveyResult.count;
+
+        // 4. Sum Total Donations
+        const donationResult = await knex('donations').sum('donationamount as total').first();
+        const donationTotal = donationResult.total || 0; // Handle null if no donations
+
+        // Render the dashboard with real data
+        res.render("admin/dashboard", { 
+            stats: {
+                participants: participantCount,
+                events: eventCount,
+                surveys: surveyCount,
+                donations: donationTotal
+            }
         });
 
     } catch (err) {
-        console.error("Error fetching account:", err);
-        res.redirect('/admin/dashboard');
+        console.error("Error loading dashboard stats:", err);
+        // Fallback to 0 if DB fails so page still loads
+        res.render("admin/dashboard", { 
+            stats: { participants: 0, events: 0, surveys: 0, donations: 0 } 
+        });
     }
 });
 
@@ -806,39 +812,51 @@ app.get("/survey", async (req, res) => {
     }
 });
 
-// 2. SUBMIT SURVEY (Fixed to use scheduleid)
+// 2. SUBMIT SURVEY (Updated for 1-5 NPS Logic)
 app.post("/survey/submit", async (req, res) => {
     if (!req.session.username) return res.redirect('/login');
 
-    const { eventName, satisfaction, usefulness, comments } = req.body;
+    // Get all fields from the new form
+    const { registrationId, satisfaction, usefulness, instructor, recommendation, comments } = req.body;
 
     try {
-        // 1. Find the Schedule ID and Participant ID for this user & event
-        const match = await knex('registrations')
-            .join('event_schedule', 'registrations.scheduleid', '=', 'event_schedule.scheduleid')
-            .join('events', 'event_schedule.eventid', '=', 'events.eventid')
+        // 1. Verify this registration actually belongs to the logged-in user
+        const validRegistration = await knex('registrations')
             .join('participants', 'registrations.participantid', '=', 'participants.participantid')
             .where('participants.username', req.session.username)
-            .where('events.eventname', eventName)
-            .orderBy('registrations.registrationid', 'desc')
-            .select('registrations.scheduleid', 'registrations.participantid')
+            .where('registrations.registrationid', registrationId)
             .first();
 
-        if (match) {
+        if (validRegistration) {
+            // 2. Calculate NPS Bucket (Custom 1-5 Scale)
+            // 5 = Promoter | 4 = Passive | 1-3 = Detractor
+            let npsBucket = 'Passive';
+            const recScore = parseInt(recommendation);
+            
+            if (recScore >= 5) {
+                npsBucket = 'Promoter';
+            } else if (recScore <= 3) {
+                npsBucket = 'Detractor';
+            }
+
+            // 3. Insert full data
             await knex('surveys').insert({
-                // Use scheduleid and participantid (matching your table structure)
-                scheduleid: match.scheduleid,
-                participantid: match.participantid,
+                registrationid: registrationId,
                 surveysatisfactionscore: satisfaction,
                 surveyusefulnessscore: usefulness,
+                surveyinstructorscore: instructor,
+                surveyrecommendationscore: recommendation,
+                surveynpsbucket: npsBucket,
                 surveycomments: comments,
                 surveysubmissiondate: new Date()
             });
+            
+            res.redirect('/thankyou');
         } else {
-            console.error("No registration found for this event to attach survey to.");
+            console.error("Invalid Registration ID or unauthorized user.");
+            res.redirect('/survey');
         }
 
-        res.redirect('/thankyou');
     } catch (err) {
         console.error("Survey submit error:", err);
         res.redirect('/survey');
