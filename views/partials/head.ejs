@@ -1,9 +1,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- Links for styling -->
+
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css">
 
 <link rel="icon" type="image/x-icon" href="/images/favicon.png">
+
+<!-- Google translate prompt -->
+
+<script type="text/javascript">
+  function googleTranslateElementInit() {
+    new google.translate.TranslateElement(
+      {pageLanguage: 'en', includedLanguages: 'es'},
+      'google_translate_element'
+    );
+  }
+
+  function doGTranslate(lang_pair) {
+    var lang = lang_pair.split('|')[1];
+    var select = document.querySelector('.goog-te-combo');
+    if (select) {
+      select.value = lang;
+      select.dispatchEvent(new Event('change'));
+    }
+  }
+</script>
+
+<script type="text/javascript" 
+        src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit">
+</script>
