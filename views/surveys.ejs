@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><!-- Title -->
     <title>Program Feedback - Ella Rises</title>
-    <%- include('partials/head') %>
+    <%- include('partials/head') %> <!-- HEader -->
     <style>
         /* --- RATING CIRCLES --- */
         .rating-group {
@@ -87,7 +87,7 @@
     </style>
 </head>
 <body class="bg-light">
-
+<!-- Header -->
     <%- include('partials/header') %>
 
     <div class="container mt-5 mb-5" style="max-width: 750px;">
@@ -103,7 +103,7 @@
             </div>
 
             <div class="card-body p-4 p-md-5">
-                
+                <!-- Survey submit route-->
                 <form action="/survey/submit" method="POST">
 
                     <div class="mb-5">
@@ -112,13 +112,13 @@
                             <span class="input-group-text bg-light border-end-0"><i class="bi bi-calendar-event"></i></span>
                             <select class="form-select border-start-0 ps-0" id="registrationId" name="registrationId" required style="background-color: #f8f9fa;">
                                 <option value="" selected disabled>-- Select an event from your history --</option>
-                                <% if (events && events.length > 0) { %>
+                                <% if (events && events.length > 0) { %> <!-- Even tsearch -->
                                     <% events.forEach(e => { %>
                                         <option value="<%= e.registrationid %>">
                                             <%= e.eventname %>
                                         </option>
                                     <% }) %>
-                                <% } else { %>
+                                <% } else { %> <!-- Validation -->
                                     <option disabled>No recent events found.</option>
                                 <% } %>
                             </select>
@@ -138,7 +138,7 @@
                                 <input type="radio" class="rating-input" name="satisfaction" id="sat<%= i %>" value="<%= i %>" required>
                                 <label class="rating-label" for="sat<%= i %>"><%= i %></label>
                             <% } %>
-                        </div>
+                        </div> <!-- Ratings -->
                     </div>
 
                     <div class="row mb-4">
@@ -149,7 +149,7 @@
                                     <input type="radio" class="rating-input" name="usefulness" id="use<%= i %>" value="<%= i %>" required>
                                     <label class="rating-label" style="width:35px; height:35px; font-size: 0.9rem;" for="use<%= i %>"><%= i %></label>
                                 <% } %>
-                            </div>
+                            </div> <!-- Raintgs -->
                         </div>
                         
                         <div class="col-md-6 text-center">
@@ -159,7 +159,7 @@
                                     <input type="radio" class="rating-input" name="instructor" id="inst<%= i %>" value="<%= i %>" required>
                                     <label class="rating-label" style="width:35px; height:35px; font-size: 0.9rem;" for="inst<%= i %>"><%= i %></label>
                                 <% } %>
-                            </div>
+                            </div> <!-- Ratings-->
                         </div>
                     </div>
 
@@ -193,7 +193,7 @@
             </div>
         </div>
     </div>
-
+ <!-- footer -->
     <%- include('partials/footer') %>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
