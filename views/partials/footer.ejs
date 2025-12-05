@@ -6,6 +6,7 @@
                 <small class="text-white-50">&copy; 2025 Ella Rises. All Rights Reserved.</small>
             </div>
 
+            <!-- Instagram link -->
             <div class="d-flex gap-3 align-items-center">
                 <span class="text-uppercase small fw-bold text-white-50 me-2" style="letter-spacing: 1px; font-size: 0.7rem;">Follow Us</span>
                 <a
@@ -18,6 +19,7 @@
                     <i class="bi bi-instagram fs-5"></i>
                 </a>
 
+                <!-- Facebook link -->
                 <a
                     href="https://www.facebook.com/EllaRises/"
                     target="_blank"
@@ -32,3 +34,17 @@
         </div>
     </div>
 </footer>
+
+<!-- Google translate -->
+<script>
+document.getElementById('translateBtn')?.addEventListener('click', function() {
+    const currentLang = document.documentElement.lang || 'en';
+    if (currentLang === 'en') {
+        doGTranslate('en|es');
+        this.textContent = 'English';
+    } else {
+        doGTranslate('es|en');
+        this.textContent = 'Español';
+    }
+});
+</script>

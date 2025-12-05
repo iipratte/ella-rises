@@ -3,8 +3,13 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm py-1">
   <div class="container-fluid">
     <a class="navbar-brand" href="/">
+
+      <!-- Logo Element -->
       <img src="/images/logo.png" alt="Ella Rises" height="65" class="d-inline-block align-text-top">
     </a>
+
+    <!-- Google Translate Element -->
+    <div id="google_translate_element" style="display:none;"></div>
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
@@ -13,12 +18,14 @@
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         
+        <!-- Home button -->
         <li class="nav-item">
           <a class="nav-link" href="/">Home</a>
         </li>
 
         <% if (user) { %>
           <li class="nav-item">
+            <!-- Google Translate Element -->
             <a class="nav-link" href="/events">Events</a>
           </li>
           
@@ -63,10 +70,11 @@
 
       <div class="d-flex align-items-center gap-2 ms-3">
 
-        <!-- Translate button (always visible, even when logged out) -->
+        <!-- Translate toggle button (always visible, even when logged out) -->
         <button class="btn btn-outline-secondary rounded-pill px-3"
                 type="button"
-                onclick="doGTranslate('en|es')">
+                onclick="doGTranslate('en|es')"
+                id="translateBtn">
           Español
         </button>
 
